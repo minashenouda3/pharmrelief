@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#04342C"/>
+<title>PharmRelief</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --green:#1D9E75;--green-dark:#0F6E56;--green-xd:#04342C;--green-l:#E1F5EE;--green-m:#5DCAA5;
+  --amber:#BA7517;--amber-l:#FAEEDA;--blue:#185FA5;--blue-l:#E6F1FB;--red:#A32D2D;--red-l:#FCEBEB;
+  --bg:#F5F5F3;--surface:#FFFFFF;--border:rgba(0,0,0,.1);--text:#1A1A1A;--muted:#6B6B6B;
+  --radius:14px;--radius-sm:10px;--nav-h:68px;--status-h:44px;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.phone{width:100%;max-width:430px;height:100vh;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--bg)}
+/* Status bar */
+.status{height:var(--status-h);background:var(--green-xd);display:flex;align-items:flex-end;padding:0 20px 8px;justify-content:space-between}
+.status-left{font-size:13px;font-weight:600;color:#fff;letter-spacing:.2px}
+.status-right{display:flex;gap:8px;align-items:center}
+.status-right i{font-size:14px;color:rgba(255,255,255,.8)}
+/* Header */
+.header{background:var(--green-xd);padding:8px 16px 14px;position:relative}
+.header-row{display:flex;align-items:center;justify-content:space-between}
+.header-title{color:#E1F5EE;font-family:'Fraunces',serif;font-size:20px;font-weight:500}
+.header-sub{color:rgba(255,255,255,.55);font-size:11px;margin-top:2px}
+.header-badge{background:rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:10px;color:var(--green-m)}
+.header-icon-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.header-icon-btn i{font-size:18px;color:#fff}
+/* Scroll area */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + 12px)}
+/* Bottom nav */
+.bottom-nav{height:var(--nav-h);background:var(--surface);border-top:0.5px solid var(--border);display:flex;align-items:flex-start;padding-top:10px;position:absolute;bottom:0;left:0;right:0;box-shadow:0 -2px 20px rgba(0,0,0,.08)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 0;border:none;background:transparent;font-family:'DM Sans',sans-serif}
+.nav-item i{font-size:22px;color:var(--muted);transition:color .15s}
+.nav-item.active i{color:var(--green)}
+.nav-item span{font-size:10px;color:var(--muted);font-weight:400;transition:color .15s}
+.nav-item.active span{color:var(--green);font-weight:500}
+.nav-dot{width:5px;height:5px;border-radius:50%;background:var(--red);position:absolute;top:8px;right:calc(50% - 14px)}
+/* Cards */
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin:0 14px 10px}
+.card-sm{background:var(--surface);border-radius:var(--radius-sm);padding:12px}
+/* Section header */
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 6px}
+.sec-title{font-size:13px;font-weight:600;color:var(--text)}
+.sec-link{font-size:12px;color:var(--green);font-weight:500}
+/* Pill */
+.pill{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap;display:inline-block}
+.pill-g{background:var(--green-l);color:#085041}
+.pill-a{background:var(--amber-l);color:#633806}
+.pill-b{background:var(--blue-l);color:#0C447C}
+.pill-r{background:var(--red-l);color:#791F1F}
+/* Avatar */
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;font-size:12px}
+.av-sq{border-radius:10px}
+/* Tag */
+.tag{font-size:10px;padding:2px 8px;border-radius:20px;background:#F1EFE8;color:#5F5E5A;display:inline-block}
+/* Row item */
+.row-item{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:0.5px solid var(--border)}
+.row-item:last-child{border-bottom:none}
+/* Metric grid */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px 10px}
+.metric-card{background:var(--surface);border-radius:var(--radius-sm);padding:14px}
+.m-label{font-size:11px;color:var(--muted);margin-bottom:5px}
+.m-val{font-size:22px;font-weight:600;color:var(--text)}
+.m-sub{font-size:10px;margin-top:3px}
+/* Button */
+.btn{border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;padding:7px 14px;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;padding:14px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.1px}
+.btn-primary i{font-size:18px}
+.btn-sm{font-size:11px;padding:5px 12px;border-radius:8px}
+/* Input */
+.inp{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);padding:13px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);outline:none;-webkit-appearance:none}
+.inp:focus{border-color:var(--green)}
+.field{margin-bottom:14px}
+.field label{font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:5px}
+/* Search bar */
+.search-wrap{margin:0 14px 12px;background:var(--surface);border-radius:var(--radius-sm);display:flex;align-items:center;gap:9px;padding:10px 13px;border:1px solid var(--border)}
+.search-wrap i{font-size:17px;color:var(--muted)}
+.search-wrap input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;flex:1}
+/* Chips */
+.chips{display:flex;gap:7px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;font-weight:400}
+.chip.on{background:var(--green-l);color:var(--green-dark);border-color:var(--green)}
+/* Shift card */
+.shift-card{background:var(--surface);border-radius:var(--radius);padding:16px;margin:0 14px 10px;border-left:3px solid var(--green)}
+.shift-card.pending{border-left-color:var(--amber)}
+.shift-card.cancelled{border-left-color:var(--red);opacity:.7}
+/* Booking step */
+.step-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 14px}
+.cal-day-lbl{font-size:10px;color:var(--muted);text-align:center;font-weight:500;padding:4px 0}
+.cal-cell{border-radius:8px;padding:4px 2px;min-height:50px;border:0.5px solid var(--border);background:var(--surface);cursor:pointer;position:relative}
+.cal-cell.has{background:#F0FAF5}
+.cal-cell.today{border:1.5px solid var(--blue)}
+.cal-cell.selected{border:1.5px solid var(--green);background:var(--green-l)}
+.cal-num{font-size:11px;text-align:center;margin-bottom:2px;font-weight:500}
+.cal-dot{width:14px;height:3px;border-radius:2px;margin:1px auto}
+/* Profile */
+.profile-header{background:var(--green-xd);padding:20px 16px 24px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.big-av{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;border:3px solid rgba(255,255,255,.2)}
+/* Badge OCP */
+.ocp-badge{font-size:10px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.1);color:var(--green-m);display:inline-flex;align-items:center;gap:4px}
+/* Notification badge */
+.notif{width:18px;height:18px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;position:absolute;top:-4px;right:-4px}
+/* Message bubble */
+.bubble{max-width:78%;border-radius:14px;padding:10px 13px;font-size:13px;line-height:1.5}
+.bubble-in{background:var(--surface);border:0.5px solid var(--border);border-radius:14px 14px 14px 4px}
+.bubble-out{background:var(--green);color:#fff;border-radius:14px 14px 4px 14px}
+/* Transitions */
+.screen{display:none;flex-direction:column;height:100%}
+.screen.active{display:flex}
+/* Pull handle */
+.pull-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:8px auto}
+/* Toast */
+.toast{position:absolute;bottom:calc(var(--nav-h) + 14px);left:14px;right:14px;background:#1A1A1A;color:#fff;border-radius:var(--radius-sm);padding:13px 16px;font-size:13px;font-weight:500;z-index:999;display:none;align-items:center;gap:10px}
+.toast.show{display:flex}
+.toast i{color:var(--green-m)}
+</style>
+</head>
+<body>
+<div class="phone" id="app">
+
+  <!-- ── HOME ── -->
+  <div class="screen active" id="screen-home">
+    <div class="status">
+      <span class="status-left">9:41</span>
+      <div class="status-right"><i class="ti ti-signal-3g"></i><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div>
+    </div>
+    <div class="header">
+      <div class="header-row">
+        <div>
+          <div class="header-title">PharmRelief</div>
+          <div class="header-sub">OCP-verified relief network</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="header-icon-btn" onclick="goScreen('notifications')"><i class="ti ti-bell"></i><span class="notif">2</span></button>
+          <button class="header-icon-btn" onclick="goScreen('profile')"><i class="ti ti-user-circle"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="scroll">
+      <!-- Metrics -->
+      <div style="height:12px"></div>
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="m-label">Available</div>
+          <div class="m-val" style="color:var(--green)" id="h-avail">27</div>
+          <div class="m-sub" style="color:var(--green)">Pharmacists ready</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Open shifts</div>
+          <div class="m-val" style="color:var(--amber)">18</div>
+          <div class="m-sub" style="color:var(--amber)">Need coverage</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">This month</div>
+          <div class="m-val">12</div>
+          <div class="m-sub" style="color:var(--muted)">Bookings made</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Pending pay</div>
+          <div class="m-val" style="color:var(--blue);font-size:18px">$4.2k</div>
+          <div class="m-sub" style="color:var(--muted)">Awaiting process</div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="sec-head"><span class="sec-title">Quick actions</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 14px;margin-bottom:12px">
+        <div onclick="goScreen('booking')" style="background:var(--surface);border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--green-l);display:flex;align-items:center;justify-content:center"><i class="ti ti-calendar-plus" style="font-size:20px;color:var(--green)"></i></div>
+          <span style="font-size:10px;color:var(--muted);text-align:center">Book Shift</span>
+        </div>
+        <div onclick="goScreen('calendar')" style="background:var(--surface);border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--blue-l);display:flex;align-items:center;justify-content:center"><i class="ti ti-calendar-month" style="font-size:20px;color:var(--blue)"></i></div>
+          <span style="font-size:10px;color:var(--muted);text-align:center">Calendar</span>
+        </div>
+        <div onclick="goScreen('pharmacists')" style="background:var(--surface);border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:12px;background:#EEEDFE;display:flex;align-items:center;justify-content:center"><i class="ti ti-users" style="font-size:20px;color:#3C3489"></i></div>
+          <span style="font-size:10px;color:var(--muted);text-align:center">Directory</span>
+        </div>
+        <div onclick="goScreen('payroll')" style="background:var(--surface);border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--amber-l);display:flex;align-items:center;justify-content:center"><i class="ti ti-coin" style="font-size:20px;color:var(--amber)"></i></div>
+          <span style="font-size:10px;color:var(--muted);text-align:center">Payroll</span>
+        </div>
+      </div>
+
+      <!-- Upcoming shifts -->
+      <div class="sec-head"><span class="sec-title">Upcoming shifts</span><span class="sec-link" onclick="goScreen('calendar')">See calendar</span></div>
+      <div class="card" style="padding:12px 16px" id="upcoming-list"></div>
+
+      <!-- Available pharmacists -->
+      <div class="sec-head"><span class="sec-title">Available now</span><span class="sec-link" onclick="goScreen('pharmacists')">View all</span></div>
+      <div style="display:flex;gap:10px;overflow-x:auto;padding:0 14px 14px;scrollbar-width:none" id="avail-scroll"></div>
+    </div>
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item" onclick="goNav('pharmacists',this)" style="position:relative"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item" onclick="goNav('messages',this)" style="position:relative"><i class="ti ti-message-dots"></i><span>Messages</span><span class="notif">1</span></button>
+      <button class="nav-item" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- ── PHARMACISTS ── -->
+  <div class="screen" id="screen-pharmacists">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="header">
+      <div class="header-row">
+        <button class="header-icon-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button>
+        <div style="color:#E1F5EE;font-family:'Fraunces',serif;font-size:18px;font-weight:500">Pharmacists</div>
+        <div style="width:36px"></div>
+      </div>
+    </div>
+    <div class="search-wrap" style="margin-top:10px">
+      <i class="ti ti-search"></i>
+      <input type="text" placeholder="Search name, OCP, specialty…" id="ph-search" oninput="filterPh()"/>
+    </div>
+    <div class="chips" id="ph-chips">
+      <button class="chip on" onclick="setPHFilter('All',this)">All</button>
+      <button class="chip" onclick="setPHFilter('Pharmacist',this)">Pharmacist</button>
+      <button class="chip" onclick="setPHFilter('Pharmacy Technician',this)">Technician</button>
+      <button class="chip" onclick="setPHFilter('available',this)">Available</button>
+      <button class="chip" onclick="setPHFilter('injection',this)">Injection cert</button>
+    </div>
+    <div class="scroll" id="ph-list"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item active" onclick="goNav('pharmacists',this)"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item" onclick="goNav('messages',this)"><i class="ti ti-message-dots"></i><span>Messages</span></button>
+      <button class="nav-item" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- ── BOOKING ── -->
+  <div class="screen" id="screen-booking">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="header">
+      <div class="header-row">
+        <button class="header-icon-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button>
+        <div style="color:#E1F5EE;font-family:'Fraunces',serif;font-size:18px;font-weight:500">Book a shift</div>
+        <div style="width:36px"></div>
+      </div>
+    </div>
+    <div class="scroll" id="booking-content"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item" onclick="goNav('pharmacists',this)"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item active" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item" onclick="goNav('messages',this)"><i class="ti ti-message-dots"></i><span>Messages</span></button>
+      <button class="nav-item" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- ── CALENDAR ── -->
+  <div class="screen" id="screen-calendar">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="header">
+      <div class="header-row">
+        <button class="header-icon-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button>
+        <div style="color:#E1F5EE;font-family:'Fraunces',serif;font-size:18px;font-weight:500">Shift calendar</div>
+        <div style="width:36px"></div>
+      </div>
+    </div>
+    <div class="scroll" id="calendar-content"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item" onclick="goNav('pharmacists',this)"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item" onclick="goNav('messages',this)"><i class="ti ti-message-dots"></i><span>Messages</span></button>
+      <button class="nav-item" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- ── MESSAGES ── -->
+  <div class="screen" id="screen-messages">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="header">
+      <div class="header-row">
+        <button class="header-icon-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button>
+        <div style="color:#E1F5EE;font-family:'Fraunces',serif;font-size:18px;font-weight:500">Messages</div>
+        <button class="header-icon-btn"><i class="ti ti-edit"></i></button>
+      </div>
+    </div>
+    <div class="scroll" id="msg-list"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item" onclick="goNav('pharmacists',this)"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item active" onclick="goNav('messages',this)"><i class="ti ti-message-dots"></i><span>Messages</span></button>
+      <button class="nav-item" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- ── THREAD ── -->
+  <div class="screen" id="screen-thread">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="header">
+      <div class="header-row">
+        <button class="header-icon-btn" onclick="goScreen('messages')"><i class="ti ti-arrow-left"></i></button>
+        <div id="thread-name" style="color:#E1F5EE;font-family:'Fraunces',serif;font-size:17px;font-weight:500">Acacia Pharmacy</div>
+        <div style="width:36px"></div>
+      </div>
+    </div>
+    <div class="scroll" id="thread-content" style="padding:14px"></div>
+    <div style="padding:10px 14px;background:var(--surface);border-top:0.5px solid var(--border);display:flex;gap:8px;position:absolute;bottom:0;left:0;right:0">
+      <input class="inp" id="thread-inp" placeholder="Message…" style="flex:1;padding:10px 14px" onkeydown="if(event.key==='Enter')sendThread()"/>
+      <button onclick="sendThread()" style="width:40px;height:40px;border-radius:50%;background:var(--green);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><i class="ti ti-send" style="font-size:18px;color:#fff"></i></button>
+    </div>
+  </div>
+
+  <!-- ── PAYROLL ── -->
+  <div class="screen" id="screen-payroll">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="header">
+      <div class="header-row">
+        <button class="header-icon-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button>
+        <div style="color:#E1F5EE;font-family:'Fraunces',serif;font-size:18px;font-weight:500">Payroll</div>
+        <div style="width:36px"></div>
+      </div>
+    </div>
+    <div class="scroll" id="payroll-content"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item" onclick="goNav('pharmacists',this)"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item" onclick="goNav('messages',this)"><i class="ti ti-message-dots"></i><span>Messages</span></button>
+      <button class="nav-item active" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- ── PROFILE ── -->
+  <div class="screen" id="screen-profile">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="profile-header">
+      <div class="big-av" style="background:rgba(255,255,255,.15);color:#fff">AG</div>
+      <div style="text-align:center">
+        <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:#fff">Agency Manager</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:3px">PharmRelief Admin</div>
+        <div class="ocp-badge" style="margin-top:8px"><i class="ti ti-shield-check" style="font-size:11px"></i>OCP Agency Partner</div>
+      </div>
+    </div>
+    <div class="scroll">
+      <div style="height:12px"></div>
+      <div class="metrics">
+        <div class="metric-card"><div class="m-label">My bookings</div><div class="m-val" style="color:var(--green)">12</div></div>
+        <div class="metric-card"><div class="m-label">Network size</div><div class="m-val">48</div></div>
+      </div>
+      <div class="card" style="padding:0">
+        ${[['ti-calendar-plus','Shift booking','Book shifts fast','booking'],['ti-calendar-month','Calendar','View all shifts','calendar'],['ti-shield-check','Credentialing','Verify OCP licenses','home'],['ti-coin','Payroll','Process payments','payroll'],['ti-settings','Settings','Account settings','home']].map(([icon,label,sub,dest])=>`
+        <div onclick="goScreen('${dest}')" style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:0.5px solid var(--border);cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:12px;background:var(--green-l);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="${icon}" style="font-size:20px;color:var(--green)"></i>
+          </div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${label}</div><div style="font-size:11px;color:var(--muted);margin-top:1px">${sub}</div></div>
+          <i class="ti ti-chevron-right" style="font-size:16px;color:var(--muted)"></i>
+        </div>`).join('')}
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item" onclick="goNav('pharmacists',this)"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item" onclick="goNav('messages',this)"><i class="ti ti-message-dots"></i><span>Messages</span></button>
+      <button class="nav-item active" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- ── NOTIFICATIONS ── -->
+  <div class="screen" id="screen-notifications">
+    <div class="status"><span class="status-left">9:41</span><div class="status-right"><i class="ti ti-wifi"></i><i class="ti ti-battery-2"></i></div></div>
+    <div class="header"><div class="header-row"><button class="header-icon-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button><div style="color:#E1F5EE;font-family:'Fraunces',serif;font-size:18px;font-weight:500">Notifications</div><div style="width:36px"></div></div></div>
+    <div class="scroll">
+      <div style="height:10px"></div>
+      ${[
+        ['ti-circle-check','#E1F5EE','#085041','Booking confirmed','Priya Arora confirmed Jun 7 · Acacia Pharmacy','2 min ago'],
+        ['ti-alert-triangle','var(--amber-l)','#633806','Urgent shift open','Hamilton General Rx needs coverage Jun 8 · 8am–6pm','15 min ago'],
+        ['ti-coin','var(--blue-l)','#0C447C','Payroll processed','PAY-1003 · $572.82 sent to Goutham Kumar','1 hr ago'],
+        ['ti-user-plus','#EEEDFE','#3C3489','New pharmacist joined','Aisha Nwosu, PharmD added to your network','2 hr ago'],
+        ['ti-shield-check','var(--green-l)','#085041','OCP verified','Wei Zhang license verified · expires Dec 2026','Yesterday'],
+      ].map(([icon,bg,col,title,body,time])=>`
+      <div style="display:flex;gap:12px;padding:14px 16px;border-bottom:0.5px solid var(--border);background:var(--surface);margin-bottom:1px">
+        <div style="width:40px;height:40px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="${icon}" style="font-size:18px;color:${col}"></i></div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;margin-bottom:2px">${title}</div><div style="font-size:12px;color:var(--muted);line-height:1.4">${body}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">${time}</div></div>
+      </div>`).join('')}
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="goNav('home',this)"><i class="ti ti-home"></i><span>Home</span></button>
+      <button class="nav-item" onclick="goNav('pharmacists',this)"><i class="ti ti-users"></i><span>Directory</span></button>
+      <button class="nav-item" onclick="goNav('booking',this)"><i class="ti ti-calendar-plus" style="font-size:26px;color:var(--green)"></i><span>Book</span></button>
+      <button class="nav-item" onclick="goNav('messages',this)"><i class="ti ti-message-dots"></i><span>Messages</span></button>
+      <button class="nav-item" onclick="goNav('profile',this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
+    </nav>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"><i class="ti ti-circle-check"></i><span id="toast-msg"></span></div>
+</div>
+
+<script>
+const COLORS=['#E1F5EE','#E6F1FB','#FBEAF0','#EEEDFE','#FAEEDA','#EAF3DE','#FAECE7'];
+const TCOLS=['#085041','#0C447C','#72243E','#3C3489','#633806','#27500A','#712B13'];
+const SPECS=[['Dispensary','Retail'],['Compounding','IV Prep'],['Hospital','Clinical'],['LTC','Palliative'],['MTM','Diabetes Mgmt'],['Oncology','Sterile'],['Pediatrics','OB/GYN']];
+const STYPES=['Dispensary','Compounding','Hospital','Clinic','LTC','Evening','Overnight'];
+const RATES=[85,64,81,78,92,69,74,88,71,83,67,79,86,62,90,73,77,84,68,80];
+const YRS=[8,2,7,12,5,14,3,9,6,11,4,16,1,10,13,7,2,8,15,5];
+const AVAIL=[false,true,false,true,true,false,true,false,true,true,false,true,true,false,true,true,false,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,false,true,true,false,true,true,false];
+const RATINGS=[4.7,4.3,4.4,4.9,4.8,4.7,5.0,4.6,4.8,4.5,4.9,4.7,4.4,4.8,4.6,4.9,4.7,4.8,4.5,4.9];
+
+const RAW_PH=[
+{id:"632899",name:"Abhi",initials:"A",type:"Pharmacist",injection:false,ocp:"632899"},
+{id:"635784",name:"Divyam",initials:"D",type:"Pharmacist",injection:false,ocp:"635784"},
+{id:"625723",name:"Goutham Kumar",initials:"GK",type:"Pharmacist",injection:true,ocp:"625723"},
+{id:"626810",name:"Indu",initials:"I",type:"Pharmacist",injection:true,ocp:"626810"},
+{id:"625749",name:"Jagath",initials:"J",type:"Pharmacist",injection:true,ocp:"625749"},
+{id:"634222",name:"Lu Lu",initials:"LL",type:"Pharmacist",injection:false,ocp:"634222"},
+{id:"635414",name:"Manmeer Virk",initials:"MV",type:"Pharmacist",injection:false,ocp:"635414"},
+{id:"628963",name:"Nabil",initials:"N",type:"Pharmacist",injection:true,ocp:"628963"},
+{id:"631567",name:"Parisa",initials:"P",type:"Pharmacist",injection:true,ocp:"631567"},
+{id:"622841",name:"Rasheed Al-Amin",initials:"RA",type:"Pharmacist",injection:false,ocp:"622841"},
+{id:"624109",name:"Sumaiya Begum",initials:"SB",type:"Pharmacist",injection:true,ocp:"624109"},
+{id:"630271",name:"Tanya Kowalski",initials:"TK",type:"Pharmacist",injection:false,ocp:"630271"},
+{id:"627384",name:"Uchenna Obi",initials:"UO",type:"Pharmacist",injection:true,ocp:"627384"},
+{id:"623018",name:"Valentina Cruz",initials:"VC",type:"Pharmacist",injection:false,ocp:"623018"},
+{id:"629445",name:"Wei Zhang",initials:"WZ",type:"Pharmacist",injection:true,ocp:"629445"},
+{id:"631902",name:"Xanthe Papadopoulos",initials:"XP",type:"Pharmacist",injection:false,ocp:"631902"},
+{id:"626573",name:"Yusuf Ibrahim",initials:"YI",type:"Pharmacist",injection:true,ocp:"626573"},
+{id:"633847",name:"Zoë Tremblay",initials:"ZT",type:"Pharmacist",injection:false,ocp:"633847"},
+{id:"624738",name:"Aarav Sharma",initials:"AS",type:"Pharmacist",injection:true,ocp:"624738"},
+{id:"628192",name:"Beatrix Novak",initials:"BN",type:"Pharmacist",injection:false,ocp:"628192"},
+{id:"624073",name:"Priya Arora",initials:"PA",type:"Pharmacist",injection:true,ocp:"624073"},
+{id:"630092",name:"Adabpreet Kaur",initials:"AK",type:"Pharmacy Technician",injection:false,ocp:"635009"},
+{id:"631283",name:"Harnoor",initials:"H",type:"Pharmacy Technician",injection:false,ocp:"635066"},
+{id:"632741",name:"Mehtaabveer Singh",initials:"MS",type:"Pharmacy Technician",injection:false,ocp:"634626"},
+];
+
+const RAW_LOC=[
+{id:"309124",name:"Acacia Pharmacy",initials:"AC",city:"Hamilton",phone:"+1(905)522-1234"},
+{id:"306730",name:"Action Pharmacy",initials:"AP",city:"Hamilton",phone:"+1(905)388-6741"},
+{id:"309847",name:"Aldershot Pharmacy",initials:"AL",city:"Burlington",phone:"+1(905)632-8800"},
+{id:"311393",name:"H&H Ontario Pharmacy",initials:"HH",city:"North York",phone:"+1(866)779-9666"},
+{id:"311210",name:"K-Town Pharmacy",initials:"KT",city:"Vaughan",phone:"+1(905)764-0909"},
+{id:"308934",name:"Ajax Compounding Rx",initials:"AJ",city:"Ajax",phone:"+1(905)426-1992"},
+{id:"311047",name:"Ace Drug Mart",initials:"AC",city:"London",phone:"+1(519)672-5432"},
+{id:"304512",name:"Advance Pharmacy",initials:"AD",city:"North York",phone:"+1(416)749-3300"},
+];
+
+const PHARMACISTS=RAW_PH.map((r,i)=>({...r,color:COLORS[i%7],textColor:TCOLS[i%7],specialties:SPECS[i%7],rating:RATINGS[i%RATINGS.length],rate:RATES[i%RATES.length],available:AVAIL[i%AVAIL.length],yrs:YRS[i%YRS.length],verified:true}));
+const LOCATIONS=RAW_LOC.map((r,i)=>({...r,color:COLORS[i%7],textColor:TCOLS[i%7],shift_type:STYPES[i%7],rate:RATES[i%RATES.length]}));
+
+let BOOKINGS=[
+  {id:"BK001",phId:"632899",locId:"309124",date:"2026-06-05",start:"09:00",end:"17:00",type:"Dispensary",rate:85,status:"Confirmed"},
+  {id:"BK002",phId:"625723",locId:"306730",date:"2026-06-06",start:"14:00",end:"22:00",type:"Compounding",rate:81,status:"Confirmed"},
+  {id:"BK003",phId:"624073",locId:"309847",date:"2026-06-07",start:"08:00",end:"16:00",type:"Dispensary",rate:78,status:"Pending"},
+  {id:"BK004",phId:"626810",locId:"311393",date:"2026-06-09",start:"09:00",end:"17:00",type:"Hospital",rate:92,status:"Confirmed"},
+  {id:"BK005",phId:"628963",locId:"311210",date:"2026-06-10",start:"07:00",end:"19:00",type:"LTC",rate:88,status:"Confirmed"},
+  {id:"BK006",phId:"625749",locId:"308934",date:"2026-06-12",start:"09:00",end:"17:00",type:"Clinic",rate:69,status:"Pending"},
+  {id:"BK007",phId:"629445",locId:"311047",date:"2026-06-23",start:"07:00",end:"15:00",type:"Hospital",rate:85,status:"Confirmed"},
+];
+
+let MSGS=[
+  {id:1,from:"Acacia Pharmacy",avatar:"AC",color:"#E1F5EE",tc:"#085041",preview:"Hi, coverage needed Sat Jun 7…",time:"10:32 AM",unread:true,thread:[{who:"them",text:"Hi, we have a dispensary shift open this Saturday 8am–4pm. Would you be available? Rate is $74/hr."},{who:"me",text:"Hello! I'm available that day. Please confirm and I'll add it to my schedule."},{who:"them",text:"Confirmed! Sending details shortly."}]},
+  {id:2,from:"Action Pharmacy",avatar:"AP",color:"#FAEEDA",tc:"#633806",preview:"Urgent: tomorrow 9am–5pm, $88/hr",time:"Yesterday",unread:false,thread:[{who:"them",text:"We need emergency coverage tomorrow 9am–5pm. Compounding background preferred. $88/hr."},{who:"me",text:"I can cover it. Please send the address."}]},
+  {id:3,from:"Aldershot Pharmacy",avatar:"AS",color:"#E6F1FB",tc:"#0C447C",preview:"Relief contract discussion",time:"Jun 1",unread:false,thread:[{who:"them",text:"We'd like to set up a quick call regarding ongoing relief coverage at our Burlington location."}]},
+];
+
+let curThread=null;
+let bookStep=1;
+let bookForm={phId:'',locId:'',date:'',start:'09:00',end:'17:00',type:'Dispensary',rate:''};
+let phFilter='All';
+let calSelDay=null;
+let screenHistory=['home'];
+
+function av(initials,color,tc,size=36,round=true){return`<div style="width:${size}px;height:${size}px;border-radius:${round?'50%':'10px'};background:${color};color:${tc};display:flex;align-items:center;justify-content:center;font-size:${size*.3}px;font-weight:600;flex-shrink:0">${initials}</div>`;}
+function pill(text,cls){return`<span class="pill ${cls}">${text}</span>`;}
+function toast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  if(screenHistory[screenHistory.length-1]!==id) screenHistory.push(id);
+  if(id==='pharmacists') renderPh();
+  if(id==='booking') renderBooking();
+  if(id==='calendar') renderCalendar();
+  if(id==='messages') renderMessages();
+  if(id==='payroll') renderPayroll();
+  // scroll to top
+  const scr=document.querySelector('#screen-'+id+' .scroll');
+  if(scr) scr.scrollTop=0;
+}
+
+function goBack(){
+  screenHistory.pop();
+  const prev=screenHistory[screenHistory.length-1]||'home';
+  goScreen(prev);
+}
+
+function goNav(id,btn){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const map={home:'home',pharmacists:'pharmacists',booking:'booking',messages:'messages',profile:'profile'};
+  goScreen(map[id]||id);
+}
+
+// ── HOME RENDER ───────────────────────────────────────────────────────────────
+function renderHome(){
+  // Upcoming
+  const ul=document.getElementById('upcoming-list');
+  if(ul){
+    const upcoming=BOOKINGS.filter(b=>b.date>='2026-06-03').slice(0,4);
+    ul.innerHTML=upcoming.map(b=>{
+      const ph=PHARMACISTS.find(p=>p.id===b.phId);
+      const loc=LOCATIONS.find(l=>l.id===b.locId);
+      if(!ph||!loc) return '';
+      return`<div class="row-item">
+        ${av(ph.initials,ph.color,ph.textColor,34)}
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">${ph.name}</div><div style="font-size:11px;color:var(--muted)">${loc.name.substring(0,20)} · ${b.date.slice(5)} · ${b.start}–${b.end}</div></div>
+        ${pill(b.status,b.status==='Confirmed'?'pill-g':'pill-a')}
+      </div>`;
+    }).join('');
+  }
+  // Available scroll
+  const as=document.getElementById('avail-scroll');
+  if(as){
+    as.innerHTML=PHARMACISTS.filter(p=>p.available).slice(0,8).map(p=>`
+      <div onclick="goScreen('pharmacists')" style="background:var(--surface);border-radius:14px;padding:14px 12px;width:120px;flex-shrink:0;cursor:pointer">
+        <div style="margin-bottom:10px">${av(p.initials,p.color,p.textColor,44)}</div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${p.specialties[0]}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--green)">$${p.rate}/hr</div>
+      </div>`).join('');
+  }
+}
+
+// ── PHARMACISTS ───────────────────────────────────────────────────────────────
+function renderPh(){
+  let d=PHARMACISTS;
+  const q=(document.getElementById('ph-search')||{}).value||'';
+  if(q) d=d.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.ocp.includes(q)||p.specialties.some(s=>s.toLowerCase().includes(q.toLowerCase())));
+  if(phFilter==='Pharmacist') d=d.filter(p=>p.type==='Pharmacist');
+  if(phFilter==='Pharmacy Technician') d=d.filter(p=>p.type==='Pharmacy Technician');
+  if(phFilter==='available') d=d.filter(p=>p.available);
+  if(phFilter==='injection') d=d.filter(p=>p.injection);
+  const el=document.getElementById('ph-list');
+  if(!el) return;
+  el.innerHTML=d.map(p=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--surface);border-bottom:0.5px solid var(--border);cursor:pointer" onclick="bookFromPh('${p.id}')">
+      ${av(p.initials,p.color,p.textColor,42)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${p.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.type} · ${p.specialties.join(', ')}</div>
+        <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
+          <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#E1F5EE;color:#085041;font-weight:500">OCP #${p.ocp}</span>
+          ${p.injection?'<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#E6F1FB;color:#0C447C">Injection</span>':''}
+          ${p.available?'<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#E1F5EE;color:#085041">Available</span>':''}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:14px;font-weight:600;color:var(--green)">$${p.rate}/hr</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">★${p.rating}</div>
+      </div>
+    </div>`).join('');
+}
+
+function filterPh(){renderPh();}
+
+function setPHFilter(f,btn){
+  phFilter=f;
+  document.querySelectorAll('#ph-chips .chip').forEach(c=>c.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  renderPh();
+}
+
+function bookFromPh(id){
+  bookForm.phId=id;
+  bookStep=2;
+  goScreen('booking');
+}
+
+// ── BOOKING ───────────────────────────────────────────────────────────────────
+function renderBooking(){
+  const el=document.getElementById('booking-content');
+  if(!el) return;
+  // Progress bar
+  const prog=`<div style="display:flex;align-items:center;gap:0;padding:14px 16px 8px">
+    ${[['1','Pharmacist'],['2','Pharmacy'],['3','Details'],['4','Confirm']].map(([n,label],i)=>`
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="width:24px;height:24px;border-radius:50%;background:${bookStep>=i+1?'var(--green)':'#E0E0E0'};color:${bookStep>=i+1?'#fff':'#aaa'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">${bookStep>i+1?'✓':n}</div>
+        <div style="font-size:9px;color:${bookStep===i+1?'var(--green)':'var(--muted)'};;font-weight:${bookStep===i+1?600:400};white-space:nowrap">${label}</div>
+      </div>
+      ${i<3?`<div style="flex:1;height:1px;background:${bookStep>i+1?'var(--green)':'#E0E0E0'};margin-bottom:12px;margin-top:2px"></div>`:''}`).join('')}
+  </div>`;
+
+  let body='';
+
+  if(bookStep===1){
+    body=`<div style="padding:0 14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:10px">Select a pharmacist</div>
+      ${PHARMACISTS.filter(p=>p.available).map(p=>`
+        <div onclick="selPh('${p.id}')" style="display:flex;align-items:center;gap:11px;padding:13px;background:${bookForm.phId===p.id?'var(--green-l)':'var(--surface)'};border-radius:12px;margin-bottom:8px;cursor:pointer;border:1px solid ${bookForm.phId===p.id?'var(--green)':'var(--border)'}">
+          ${av(p.initials,p.color,p.textColor,40)}
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--muted)">${p.specialties.join(', ')}</div></div>
+          <div style="font-size:13px;font-weight:600;color:var(--green)">$${p.rate}/hr</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  else if(bookStep===2){
+    const ph=PHARMACISTS.find(p=>p.id===bookForm.phId);
+    body=`<div style="padding:0 14px">
+      ${ph?`<div style="display:flex;align-items:center;gap:10px;padding:11px;background:var(--green-l);border-radius:12px;margin-bottom:12px">${av(ph.initials,ph.color,ph.textColor,34)}<div><div style="font-size:12px;font-weight:500">${ph.name}</div><div style="font-size:11px;color:#085041">Selected · $${ph.rate}/hr</div></div></div>`:''}
+      <div style="font-size:13px;font-weight:500;margin-bottom:10px">Select a pharmacy</div>
+      ${LOCATIONS.map(l=>`
+        <div onclick="selLoc('${l.id}')" style="display:flex;align-items:center;gap:11px;padding:13px;background:${bookForm.locId===l.id?'var(--green-l)':'var(--surface)'};border-radius:12px;margin-bottom:8px;cursor:pointer;border:1px solid ${bookForm.locId===l.id?'var(--green)':'var(--border)'}">
+          ${av(l.initials,l.color,l.textColor,40)}
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${l.name}</div><div style="font-size:11px;color:var(--muted)">${l.city} · ${l.shift_type}</div></div>
+          <i class="ti ti-chevron-right" style="color:var(--muted);font-size:16px"></i>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  else if(bookStep===3){
+    body=`<div style="padding:0 14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:14px">Shift details</div>
+      <div class="field"><label>Date</label><input class="inp" type="date" value="${bookForm.date}" onchange="bookForm.date=this.value" min="2026-06-03"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label>Start time</label><input class="inp" type="time" value="${bookForm.start}" onchange="bookForm.start=this.value"/></div>
+        <div class="field"><label>End time</label><input class="inp" type="time" value="${bookForm.end}" onchange="bookForm.end=this.value"/></div>
+      </div>
+      <div class="field"><label>Shift type</label><select class="inp" onchange="bookForm.type=this.value">${STYPES.map(s=>`<option ${bookForm.type===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>Hourly rate (CAD)</label><input class="inp" type="number" value="${bookForm.rate||PHARMACISTS.find(p=>p.id===bookForm.phId)?.rate||''}" onchange="bookForm.rate=this.value" placeholder="${PHARMACISTS.find(p=>p.id===bookForm.phId)?.rate||''}"/></div>
+      <div style="margin-bottom:20px"></div>
+      <button class="btn-primary" onclick="bookNext3()" ${!bookForm.date?'style="opacity:.5;pointer-events:none"':''}>
+        <i class="ti ti-arrow-right"></i> Review booking
+      </button>
+    </div>`;
+  }
+
+  else if(bookStep===4){
+    const ph=PHARMACISTS.find(p=>p.id===bookForm.phId);
+    const loc=LOCATIONS.find(l=>l.id===bookForm.locId);
+    const hrs=bookForm.start&&bookForm.end?(parseInt(bookForm.end)-parseInt(bookForm.start)):8;
+    const rate=parseInt(bookForm.rate)||ph?.rate||0;
+    const total=hrs*rate*1.13;
+    body=`<div style="padding:0 14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:14px">Confirm booking</div>
+      ${ph?`<div style="display:flex;align-items:center;gap:11px;padding:14px;background:var(--surface);border-radius:12px;margin-bottom:10px">
+        ${av(ph.initials,ph.color,ph.textColor,44)}
+        <div>
+          <div style="font-size:14px;font-weight:500">${ph.name}</div>
+          <div style="font-size:11px;color:var(--muted)">OCP #${ph.ocp} · ${ph.type}</div>
+          <div style="font-size:11px;font-weight:500;color:var(--green);margin-top:3px">$${rate}/hr · ${ph.specialties.join(', ')}</div>
+        </div>
+      </div>`:''}
+      ${loc?`<div style="display:flex;align-items:center;gap:11px;padding:14px;background:var(--surface);border-radius:12px;margin-bottom:10px">
+        ${av(loc.initials,loc.color,loc.textColor,44)}
+        <div>
+          <div style="font-size:14px;font-weight:500">${loc.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${loc.city} · ${loc.phone}</div>
+        </div>
+      </div>`:''}
+      <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${[['Date',bookForm.date],['Time',`${bookForm.start}–${bookForm.end}`],['Type',bookForm.type],['Hours',`${hrs}h`],['Rate',`$${rate}/hr`],['Total + HST','$'+total.toFixed(0)]].map(([l,v])=>`<div><div style="font-size:10px;color:var(--muted)">${l}</div><div style="font-size:13px;font-weight:500;margin-top:2px">${v}</div></div>`).join('')}
+        </div>
+      </div>
+      <button class="btn-primary" onclick="confirmBook()">
+        <i class="ti ti-circle-check"></i> Confirm booking
+      </button>
+      <div style="height:10px"></div>
+      <button onclick="bookStep=3;renderBooking()" style="width:100%;padding:13px;border:1px solid var(--border);border-radius:12px;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);cursor:pointer">Edit details</button>
+    </div>`;
+  }
+
+  el.innerHTML=`<div style="height:10px"></div>${prog}${body}<div style="height:20px"></div>`;
+}
+
+function selPh(id){bookForm.phId=id;bookStep=2;renderBooking();}
+function selLoc(id){bookForm.locId=id;bookStep=3;renderBooking();}
+function bookNext3(){bookStep=4;renderBooking();}
+function confirmBook(){
+  const id='BK'+String(BOOKINGS.length+100).padStart(3,'0');
+  const rate=parseInt(bookForm.rate)||PHARMACISTS.find(p=>p.id===bookForm.phId)?.rate||75;
+  BOOKINGS.push({id,phId:bookForm.phId,locId:bookForm.locId,date:bookForm.date,start:bookForm.start,end:bookForm.end,type:bookForm.type,rate,status:'Pending'});
+  bookStep=1;
+  bookForm={phId:'',locId:'',date:'',start:'09:00',end:'17:00',type:'Dispensary',rate:''};
+  toast('Shift booked successfully!');
+  goScreen('calendar');
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+function renderCalendar(){
+  const el=document.getElementById('calendar-content');
+  if(!el) return;
+  const DAYS=['S','M','T','W','T','F','S'];
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const y=2026,m=5; // June
+  const firstDay=new Date(y,m,1).getDay();
+  const daysInMonth=30;
+
+  const bForDay=(d)=>BOOKINGS.filter(b=>b.date===`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+
+  const daySelDetail=calSelDay?bForDay(calSelDay):[];
+
+  el.innerHTML=`
+  <div style="height:10px"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:10px">
+    <span style="font-family:'Fraunces',serif;font-size:17px;font-weight:500">June 2026</span>
+    <div style="display:flex;gap:7px">
+      <div style="font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></span>Confirmed</div>
+      <div style="font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--amber);display:inline-block"></span>Pending</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 12px;margin-bottom:6px">
+    ${DAYS.map(d=>`<div style="font-size:10px;color:var(--muted);text-align:center;padding:4px 0;font-weight:500">${d}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 12px;margin-bottom:12px">
+    ${Array(firstDay).fill('<div></div>').join('')}
+    ${Array(daysInMonth).fill(null).map((_,i)=>{
+      const d=i+1;
+      const ds=`2026-06-${String(d).padStart(2,'0')}`;
+      const dayBks=bForDay(d);
+      const isToday=ds==='2026-06-03';
+      const isSel=calSelDay===d;
+      return`<div onclick="calSel(${d})" style="border-radius:8px;padding:4px 2px;min-height:48px;border:${isSel?'1.5px solid var(--green)':isToday?'1.5px solid var(--blue)':'0.5px solid var(--border)'};background:${isSel?'var(--green-l)':dayBks.length?'#F0FAF5':'var(--surface)'};cursor:pointer">
+        <div style="font-size:10px;text-align:center;font-weight:${isToday?600:400};color:${isToday?'var(--blue)':isSel?'var(--green-dark)':'var(--text)'};margin-bottom:2px">${d}</div>
+        ${dayBks.slice(0,2).map(b=>{const ph=PHARMACISTS.find(p=>p.id===b.phId);return`<div style="font-size:8px;padding:1px 3px;border-radius:3px;background:${b.status==='Confirmed'?'var(--green)':'var(--amber)'};color:#fff;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${ph?ph.initials:''}</div>`;}).join('')}
+        ${dayBks.length>2?`<div style="font-size:8px;color:var(--muted);text-align:center">+${dayBks.length-2}</div>`:''}
+      </div>`;
+    }).join('')}
+  </div>
+
+  ${calSelDay?`
+  <div style="padding:0 14px">
+    <div style="font-size:13px;font-weight:500;margin-bottom:10px">June ${calSelDay} shifts</div>
+    ${daySelDetail.length===0?`<div style="background:var(--surface);border-radius:12px;padding:20px;text-align:center;color:var(--muted);font-size:13px">No shifts · <span onclick="goScreen('booking')" style="color:var(--green);font-weight:500;cursor:pointer">Book one</span></div>`:
+    daySelDetail.map(b=>{
+      const ph=PHARMACISTS.find(p=>p.id===b.phId);
+      const loc=LOCATIONS.find(l=>l.id===b.locId);
+      if(!ph||!loc) return '';
+      const hrs=parseInt(b.end)-parseInt(b.start);
+      return`<div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px;border-left:3px solid ${b.status==='Confirmed'?'var(--green)':'var(--amber)'}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          ${av(ph.initials,ph.color,ph.textColor,36)}
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${ph.name}</div><div style="font-size:11px;color:var(--muted)">${loc.name} · ${b.type}</div></div>
+          ${b.status==='Confirmed'?'<span class="pill pill-g">Confirmed</span>':'<span class="pill pill-a">Pending</span>'}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:10px">
+          <span><i class="ti ti-clock" style="font-size:12px;vertical-align:-1px"></i> ${b.start}–${b.end} (${hrs}h)</span>
+          <span style="font-weight:500;color:var(--green)">$${b.rate}/hr · $${b.rate*hrs} gross</span>
+        </div>
+        ${b.status==='Pending'?`<div style="display:flex;gap:8px"><button onclick="confirmBk('${b.id}')" style="flex:1;padding:9px;background:var(--green);color:#fff;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer">Confirm</button><button onclick="cancelBk('${b.id}')" style="padding:9px 14px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer">Cancel</button></div>`:`<button onclick="cancelBk('${b.id}')" style="width:100%;padding:9px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer">Cancel shift</button>`}
+      </div>`;
+    }).join('')}
+  </div>
+  `:`<div style="padding:0 14px;margin-bottom:12px">
+    <div style="font-size:13px;font-weight:500;margin-bottom:10px">All June bookings (${BOOKINGS.length})</div>
+    ${BOOKINGS.sort((a,b)=>a.date.localeCompare(b.date)).map(b=>{
+      const ph=PHARMACISTS.find(p=>p.id===b.phId);
+      const loc=LOCATIONS.find(l=>l.id===b.locId);
+      if(!ph||!loc) return '';
+      return`<div style="display:flex;align-items:center;gap:10px;padding:11px;background:var(--surface);border-radius:11px;margin-bottom:7px">
+        ${av(ph.initials,ph.color,ph.textColor,34)}
+        <div style="flex:1"><div style="font-size:12px;font-weight:500">${ph.name} → ${loc.name.substring(0,14)}</div><div style="font-size:11px;color:var(--muted)">${b.date.slice(5)} · ${b.start}–${b.end} · $${b.rate}/hr</div></div>
+        ${b.status==='Confirmed'?'<span class="pill pill-g">✓</span>':'<span class="pill pill-a">Pending</span>'}
+      </div>`;
+    }).join('')}
+  </div>`}
+  <div style="height:20px"></div>`;
+}
+
+function calSel(d){calSelDay=calSelDay===d?null:d;renderCalendar();}
+function confirmBk(id){BOOKINGS=BOOKINGS.map(b=>b.id===id?{...b,status:'Confirmed'}:b);toast('Shift confirmed!');renderCalendar();}
+function cancelBk(id){BOOKINGS=BOOKINGS.map(b=>b.id===id?{...b,status:'Cancelled'}:b);toast('Shift cancelled');renderCalendar();}
+
+// ── MESSAGES ──────────────────────────────────────────────────────────────────
+function renderMessages(){
+  const el=document.getElementById('msg-list');
+  if(!el) return;
+  el.innerHTML=`<div style="height:8px"></div>`+MSGS.map(m=>`
+    <div onclick="openThread(${m.id})" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:${m.unread?'#F8FDF9':' var(--surface)'};border-bottom:0.5px solid var(--border);cursor:pointer">
+      ${av(m.avatar,m.color,m.tc,44)}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:13px;font-weight:${m.unread?600:500}">${m.from}</span>
+          <span style="font-size:10px;color:var(--muted)">${m.time}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.preview}</div>
+      </div>
+      ${m.unread?'<span style="width:9px;height:9px;border-radius:50%;background:var(--green);flex-shrink:0"></span>':''}
+    </div>`).join('');
+}
+
+function openThread(id){
+  curThread=MSGS.find(m=>m.id===id);
+  MSGS=MSGS.map(m=>m.id===id?{...m,unread:false}:m);
+  document.getElementById('thread-name').textContent=curThread.from;
+  renderThread();
+  goScreen('thread');
+}
+
+function renderThread(){
+  if(!curThread) return;
+  const el=document.getElementById('thread-content');
+  if(!el) return;
+  el.innerHTML=curThread.thread.map(t=>`
+    <div style="display:flex;flex-direction:column;align-items:${t.who==='me'?'flex-end':'flex-start'};margin-bottom:10px">
+      <div class="bubble ${t.who==='me'?'bubble-out':'bubble-in'}">${t.text}</div>
+    </div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function sendThread(){
+  const inp=document.getElementById('thread-inp');
+  if(!inp||!inp.value.trim()) return;
+  curThread.thread.push({who:'me',text:inp.value.trim()});
+  inp.value='';
+  renderThread();
+}
+
+// ── PAYROLL ───────────────────────────────────────────────────────────────────
+function renderPayroll(){
+  const el=document.getElementById('payroll-content');
+  if(!el) return;
+  const recs=PHARMACISTS.filter(p=>p.rate>0).slice(0,12).map((p,i)=>({id:`PAY-${1001+i}`,name:p.name,pharmacy:LOCATIONS[i%LOCATIONS.length].name,hrs:8+(i%4),rate:p.rate,gross:p.rate*(8+(i%4)),net:parseFloat((p.rate*(8+(i%4))*1.13).toFixed(2)),status:i%3===0?'Paid':i%3===1?'Pending':'Processing'}));
+  const totP=recs.filter(r=>r.status==='Pending').reduce((a,r)=>a+r.net,0);
+  const totPaid=recs.filter(r=>r.status==='Paid').reduce((a,r)=>a+r.net,0);
+  el.innerHTML=`
+  <div style="height:10px"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;margin-bottom:12px">
+    <div class="metric-card"><div class="m-label">Pending</div><div class="m-val" style="color:var(--amber);font-size:18px">$${Math.round(totP).toLocaleString()}</div></div>
+    <div class="metric-card"><div class="m-label">Paid this month</div><div class="m-val" style="color:var(--green);font-size:18px">$${Math.round(totPaid).toLocaleString()}</div></div>
+  </div>
+  <div style="padding:0 14px">
+    <div style="font-size:13px;font-weight:500;margin-bottom:10px">Invoices</div>
+    ${recs.map(r=>`
+      <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:13px;font-weight:500">${r.name}</div>
+          ${r.status==='Paid'?'<span class="pill pill-g">Paid</span>':r.status==='Pending'?'<span class="pill pill-a">Pending</span>':'<span class="pill pill-b">Processing</span>'}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${r.pharmacy.substring(0,22)} · ${r.hrs}h · $${r.rate}/hr</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <span style="font-size:11px;color:var(--muted)">Gross $${r.gross.toLocaleString()} + HST → </span>
+            <span style="font-size:13px;font-weight:600;color:var(--green)">$${r.net.toLocaleString()}</span>
+          </div>
+          ${r.status==='Pending'?`<button onclick="toast('Payment marked as paid')" style="font-size:11px;padding:5px 12px;border-radius:8px;background:var(--green-l);color:var(--green-dark);border:1px solid var(--green);font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500">Mark paid</button>`:''}
+        </div>
+      </div>`).join('')}
+  </div>
+  <div style="height:20px"></div>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  renderHome();
+  renderPh();
+  renderMessages();
+});
+</script>
+</body>
+</html>
