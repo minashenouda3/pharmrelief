@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PharmRelief — OCP Data Hub</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--g:#1D9E75;--gd:#0F6E56;--gx:#04342C;--gl:#E1F5EE;--b:#185FA5;--bl:#E6F1FB;--a:#BA7517;--al:#FAEEDA;--r:#A32D2D;--rl:#FCEBEB;--v:#534AB7;--vl:#EEEDFE;--bg:#F5F4F1;--surf:#fff;--bdr:rgba(0,0,0,.09);--text:#1A1A1A;--muted:#6B6B6B}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.topbar{background:var(--gx);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{color:#E1F5EE;font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.logo i{color:#5DCAA5;font-size:18px}
+.status-row{display:flex;gap:14px;align-items:center}
+.sdot{width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.live{background:#5DCAA5}.warn{background:#EF9F27}
+.nav{background:var(--surf);border-bottom:0.5px solid var(--bdr);display:flex;gap:2px;padding:7px 14px;overflow-x:auto;position:sticky;top:46px;z-index:99}
+.nb{font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;border:none;font-family:inherit;background:transparent;color:var(--muted);font-weight:400}
+.nb i{font-size:13px}
+.nb.active{background:var(--gl);color:var(--gd);font-weight:500}
+.main{padding:18px 20px;max-width:960px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+.h2{font-family:'Fraunces',serif;font-size:20px;font-weight:500;margin-bottom:4px}
+.sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.card{background:var(--surf);border:0.5px solid var(--bdr);border-radius:12px;padding:15px}
+.metric{background:var(--bg);border-radius:8px;padding:12px 14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px}
+.pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:500;white-space:nowrap;display:inline-block}
+.pg{background:var(--gl);color:#085041}.pa{background:var(--al);color:#633806}
+.pb{background:var(--bl);color:#0C447C}.pv{background:var(--vl);color:#3C3489}
+.pr{background:var(--rl);color:#791F1F}
+.row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:0.5px solid var(--bdr)}
+.row:last-child{border-bottom:none}
+.btn{font-size:11px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted);border:0.5px solid var(--bdr);font-weight:500}
+.btn-g{font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;background:var(--g);color:#fff;border:none;font-weight:500}
+.btn-b{font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;background:var(--b);color:#fff;border:none;font-weight:500}
+.inp{font-family:inherit;font-size:12px;color:var(--text);padding:7px 11px;border:0.5px solid var(--bdr);border-radius:8px;background:var(--bg);outline:none;width:100%}
+.inp:focus{border-color:var(--g)}
+.code{font-family:'JetBrains Mono',monospace;font-size:10px;background:#0D1117;color:#79D6A8;border-radius:8px;padding:14px;overflow-x:auto;white-space:pre;margin:8px 0;line-height:1.7;border:0.5px solid rgba(255,255,255,.06)}
+table{width:100%;font-size:11px;border-collapse:collapse}
+th{text-align:left;padding:8px 9px;font-weight:500;color:var(--muted);border-bottom:0.5px solid var(--bdr);background:var(--bg)}
+td{padding:7px 9px;border-bottom:0.5px solid var(--bdr)}
+tr:hover td{background:var(--bg)}
+.info{background:var(--bl);border-radius:8px;padding:12px;border-left:3px solid var(--b);margin-bottom:10px}
+.warn-box{background:var(--al);border-radius:8px;padding:12px;border-left:3px solid var(--a);margin-bottom:10px}
+.good{background:var(--gl);border-radius:8px;padding:12px;border-left:3px solid var(--g);margin-bottom:10px}
+.danger{background:var(--rl);border-radius:8px;padding:12px;border-left:3px solid var(--r);margin-bottom:10px}
+.news-card{border:0.5px solid var(--bdr);border-radius:10px;padding:13px;margin-bottom:10px;background:var(--surf)}
+.news-card:hover{border-color:var(--g)}
+.tag{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--bg);color:var(--muted);border:0.5px solid var(--bdr)}
+.st{font-size:13px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.st i{font-size:15px;color:var(--g)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;font-size:12px;padding:10px 18px;border-radius:10px;display:none;align-items:center;gap:8px;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.toast.show{display:flex}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><i class="ti ti-database" aria-hidden="true"></i>PharmRelief — OCP Data Hub
+    <span style="font-size:10px;background:rgba(255,255,255,.1);color:#9FE1CB;padding:2px 9px;border-radius:20px;margin-left:4px">Live</span>
+  </div>
+  <div class="status-row">
+    <div style="display:flex;align-items:center;gap:5px"><div class="sdot live"></div><span style="font-size:11px;color:#9FE1CB">Registry synced 11:42 PM</span></div>
+    <div style="display:flex;align-items:center;gap:5px"><div class="sdot live"></div><span style="font-size:11px;color:#9FE1CB">eConnect: 3 new</span></div>
+    <div style="display:flex;align-items:center;gap:5px"><div class="sdot warn"></div><span style="font-size:11px;color:#FAC775">2 changes detected</span></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nb active" onclick="show('overview',this)"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Overview</button>
+  <button class="nb" onclick="show('sync',this)"><i class="ti ti-refresh" aria-hidden="true"></i>Registry sync</button>
+  <button class="nb" onclick="show('changes',this)"><i class="ti ti-git-diff" aria-hidden="true"></i>Change log<span style="background:#E24B4A;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:3px">2</span></button>
+  <button class="nb" onclick="show('econnect',this)"><i class="ti ti-newspaper" aria-hidden="true"></i>eConnect feed</button>
+  <button class="nb" onclick="show('verify',this)"><i class="ti ti-shield-check" aria-hidden="true"></i>Live verify</button>
+  <button class="nb" onclick="show('automation',this)"><i class="ti ti-settings-automation" aria-hidden="true"></i>Automation rules</button>
+  <button class="nb" onclick="show('howto',this)"><i class="ti ti-info-circle" aria-hidden="true"></i>What OCP provides</button>
+</div>
+
+<div class="main">
+<div class="toast" id="toast"><i class="ti ti-circle-check" aria-hidden="true"></i><span id="tmsg"></span></div>
+
+<!-- OVERVIEW -->
+<div class="panel active" id="panel-overview">
+  <div class="h2">OCP Data Hub</div>
+  <p class="sub">Three legitimate data channels from the Ontario College of Pharmacists — all within OCP's public data policy</p>
+  <div class="g4">
+    <div class="metric"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Registry records</div><div style="font-size:21px;font-weight:500;color:var(--g)">28,909</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Last sync: 11:42 PM</div></div>
+    <div class="metric"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Changes detected</div><div style="font-size:21px;font-weight:500;color:var(--a)">2</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Since yesterday</div></div>
+    <div class="metric"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">eConnect articles</div><div style="font-size:21px;font-weight:500;color:var(--b)">3</div><div style="font-size:11px;color:var(--muted);margin-top:2px">New this week</div></div>
+    <div class="metric"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Verifications (24h)</div><div style="font-size:21px;font-weight:500;color:var(--g)">14</div><div style="font-size:11px;color:var(--muted);margin-top:2px">All passed</div></div>
+  </div>
+  <div class="g3" style="margin-bottom:14px">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center"><i class="ti ti-file-download" style="font-size:19px;color:var(--g)" aria-hidden="true"></i></div>
+        <div><div style="font-size:13px;font-weight:500">Nightly CSV sync</div><div style="font-size:11px;color:var(--muted)">Scheduled · 5pm–midnight OCP window</div></div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">OCP's public register allows CSV export between 5pm–midnight. We automate this nightly, diff against our database, and flag any new registrants, status changes, suspensions, or injection cert updates. Works like a SharePoint list refresh — but pulling from OCP instead of an intranet.</p>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">Last run</div><div style="font-size:11px;font-weight:500">Jun 3 · 11:42 PM ✓</div></div>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">Records</div><div style="font-size:11px;font-weight:500">28,909</div></div>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">Changes found</div><div style="font-size:11px;font-weight:500;color:var(--a)">2</div></div>
+      <button class="btn-g" style="width:100%;margin-top:10px;font-size:11px" onclick="runSync()">Run manual sync now</button>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:var(--bl);display:flex;align-items:center;justify-content:center"><i class="ti ti-newspaper" style="font-size:19px;color:var(--b)" aria-hidden="true"></i></div>
+        <div><div style="font-size:13px;font-weight:500">eConnect news feed</div><div style="font-size:11px;color:var(--muted)">ocpinfo.com · public HTML parsed</div></div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">OCP eConnect is the College's official bi-weekly newsletter — regulatory updates, scope changes, mandatory requirements. We parse the public web pages and surface relevant articles inside PharmRelief like a SharePoint news feed, tagged by relevance to pharmacists or pharmacy owners.</p>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">Source</div><div style="font-size:11px;font-weight:500">ocpinfo.com/news-and-resources/e-connect</div></div>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">OCP publishes</div><div style="font-size:11px;font-weight:500">Bi-weekly (approx.)</div></div>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">New this week</div><div style="font-size:11px;font-weight:500;color:var(--b)">3 articles</div></div>
+      <button class="btn-b" style="width:100%;margin-top:10px;font-size:11px" onclick="show('econnect',document.querySelectorAll('.nb')[3])">View eConnect feed</button>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:var(--vl);display:flex;align-items:center;justify-content:center"><i class="ti ti-shield-check" style="font-size:19px;color:var(--v)" aria-hidden="true"></i></div>
+        <div><div style="font-size:13px;font-weight:500">On-demand verification</div><div style="font-size:11px;color:var(--muted)">members.ocpinfo.com · public lookup</div></div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">When a pharmacist self-registers on PharmRelief, we query the OCP public register with their OCP number — cross-referencing name, status, injection cert, conditions, and discipline history before approving their profile. Real-time, one lookup per registration event.</p>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">Response time</div><div style="font-size:11px;font-weight:500">~2–4 seconds</div></div>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">Verifications today</div><div style="font-size:11px;font-weight:500;color:var(--v)">14 passed</div></div>
+      <div class="row"><div style="flex:1;font-size:11px;color:var(--muted)">Auto-flags</div><div style="font-size:11px;font-weight:500">Conditions, discipline, non-active</div></div>
+      <button class="btn" style="width:100%;margin-top:10px;font-size:11px;border-color:var(--v);color:var(--v)" onclick="show('verify',document.querySelectorAll('.nb')[4])">Try live verify</button>
+    </div>
+  </div>
+  <div class="warn-box">
+    <div style="font-size:12px;font-weight:500;color:#633806;margin-bottom:4px"><i class="ti ti-info-circle" style="font-size:13px;vertical-align:-2px" aria-hidden="true"></i> Important — OCP eConnect is a newsletter, not an API</div>
+    <div style="font-size:11px;color:#854F0B;line-height:1.6">OCP eConnect is an email newsletter published bi-weekly — not a data API, webhook, or live registry feed. OCP does not offer programmatic API access to third parties. The three channels above represent everything legitimately available from OCP's public data. See the <strong>"What OCP provides"</strong> tab for a full breakdown of what is and isn't available.</div>
+  </div>
+</div>
+
+<!-- SYNC -->
+<div class="panel" id="panel-sync">
+  <div class="h2">Nightly registry sync</div>
+  <p class="sub">Automated nightly download and diff of the OCP public register CSV · runs between 5pm–midnight per OCP's server policy</p>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="st"><i class="ti ti-settings-automation" aria-hidden="true"></i>Sync configuration</div>
+      <div class="g2" style="margin-bottom:12px">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500">Scheduled time</div><select class="inp"><option>11:00 PM daily</option><option>10:00 PM daily</option><option>5:30 PM daily</option></select></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500">Member status filter</div><select class="inp"><option>Active only</option><option>All statuses</option></select></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:500">Alert when these changes are detected:</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">
+        ${['New Active registration added to OCP','Status change (Active → Suspended)','Status change (Active → Revoked)','Status change (Active → Cancelled for Non-Payment)','Injection training status changed','Discipline history added to public register'].map(item=>`<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer"><input type="checkbox" checked style="accent-color:var(--g)"/> ${item}</label>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-g" style="flex:1" onclick="runSync()">Run sync now</button>
+        <button class="btn" onclick="toast2('Schedule saved')">Save schedule</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="st"><i class="ti ti-history" aria-hidden="true"></i>Sync history</div>
+      <table><thead><tr><th>Date</th><th>Time</th><th>Records</th><th>Changes</th><th>Duration</th><th>Result</th></tr></thead><tbody>
+      ${[['Jun 3','11:42 PM','28,909','2','4m 12s','pg'],['Jun 2','11:38 PM','28,907','0','4m 08s','pg'],['Jun 1','11:41 PM','28,907','1','4m 15s','pg'],['May 31','11:39 PM','28,906','0','4m 09s','pg'],['May 30','11:45 PM','28,906','3','4m 22s','pg'],['May 29','11:52 PM','28,903','0','4m 31s','pg']].map(([d,t,rec,ch,dur,p])=>`<tr><td>${d}</td><td>${t}</td><td>${rec}</td><td style="font-weight:${parseInt(ch)>0?500:400};color:${parseInt(ch)>0?'var(--a)':'var(--text)'}">${ch}</td><td style="color:var(--muted)">${dur}</td><td><span class="pill ${p}">✓ Success</span></td></tr>`).join('')}
+      </tbody></table>
+      <div id="sync-progress" style="display:none;margin-top:12px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Syncing with OCP public register…</div>
+        <div style="height:4px;background:var(--bg);border-radius:2px;overflow:hidden"><div id="prog-bar" style="height:4px;background:var(--g);border-radius:2px;width:0%;transition:width .1s"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="st"><i class="ti ti-code" aria-hidden="true"></i>Implementation — Supabase Edge Function (runs via cron)</div>
+    <div class="code">// supabase/functions/ocp-sync/index.ts
+// Scheduled via: supabase functions deploy ocp-sync --schedule "0 23 * * *"
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+Deno.serve(async () => {
+  const hour = new Date().getHours()
+
+  // OCP only allows CSV export between 5pm and midnight
+  if (hour < 17) return new Response('Outside OCP export window — retry after 5pm')
+
+  // 1. Download fresh CSV from OCP public register search
+  const res = await fetch('https://members.ocpinfo.com/tcpr/public/pr/en/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ member_status: 'Active', export: 'csv' })
+  })
+  const csv = await res.text()
+  const fresh = parseCSV(csv)  // returns [{ocp, name, type, status, injection}]
+
+  // 2. Load our current snapshot from Supabase
+  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_KEY')!)
+  const { data: existing } = await sb.from('ocp_snapshot').select('*')
+  const existingMap = Object.fromEntries(existing.map(r => [r.ocp_number, r]))
+
+  // 3. Diff — find new, changed, and removed records
+  const changes = []
+  for (const r of fresh) {
+    const prev = existingMap[r.ocp]
+    if (!prev) {
+      changes.push({ type: 'NEW_REGISTRATION', ...r })
+    } else if (prev.status !== r.status) {
+      changes.push({ type: 'STATUS_CHANGE', ocp: r.ocp, name: r.name, from: prev.status, to: r.status })
+    } else if (prev.injection !== r.injection) {
+      changes.push({ type: 'INJECTION_CHANGE', ocp: r.ocp, name: r.name, injection: r.injection })
+    }
+  }
+
+  // 4. Apply changes + trigger automations
+  for (const change of changes) {
+    await applyChange(sb, change)  // see automation rules tab
+  }
+
+  // 5. Replace snapshot, log run, send alerts
+  await sb.from('ocp_snapshot').delete().neq('id', 0)
+  await sb.from('ocp_snapshot').insert(fresh.map(r => ({ ocp_number: r.ocp, ...r })))
+  await sb.from('sync_log').insert({ records: fresh.length, changes: changes.length })
+  if (changes.length > 0) await sendAlerts(changes)
+
+  return new Response(JSON.stringify({ records: fresh.length, changes: changes.length }))
+})</div>
+  </div>
+</div>
+
+<!-- CHANGE LOG -->
+<div class="panel" id="panel-changes">
+  <div class="h2">Registry change log</div>
+  <p class="sub">Differences detected between nightly OCP CSV snapshots — impacts pharmacists active on PharmRelief</p>
+  <div class="danger">
+    <div style="font-size:13px;font-weight:500;color:var(--r);margin-bottom:3px"><i class="ti ti-alert-triangle" style="font-size:14px;vertical-align:-2px" aria-hidden="true"></i> 1 change requires immediate action</div>
+    <div style="font-size:12px;color:#791F1F">A pharmacist on your platform has been suspended by OCP. They have 2 upcoming bookings that must be cancelled.</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+    <div style="border-left:3px solid var(--r);border-radius:10px;padding:14px;background:var(--rl)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <i class="ti ti-user-x" style="font-size:16px;color:var(--r)" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:500;color:var(--r)">Status change — Active → Suspended for Non-Payment</span>
+        <span class="pill pr" style="margin-left:auto">Action required</span>
+      </div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:2px">Liam O'Brien · OCP #623291 · Pharmacist</div>
+      <div style="font-size:11px;color:#791F1F;margin-bottom:8px">Detected: Jun 3, 2026 at 11:42 PM · Source: OCP nightly CSV diff</div>
+      <div style="font-size:12px;color:#791F1F;line-height:1.6;margin-bottom:12px">This pharmacist has 2 upcoming bookings on PharmRelief (Jun 15 — Hamilton General, Jun 22 — Ajax Compounding). They are no longer in good standing with OCP and cannot legally practise pharmacy in Ontario. Both bookings must be cancelled immediately and the pharmacies notified so they can find alternative coverage.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" style="border-color:var(--r);color:var(--r);font-size:11px" onclick="toast2('2 bookings cancelled · Hamilton General and Ajax notified · Find coverage alerts sent')">Cancel 2 bookings and notify pharmacies</button>
+        <button class="btn" style="font-size:11px" onclick="toast2('Liam O\'Brien suspended from PharmRelief · pending OCP reinstatement')">Suspend from platform</button>
+        <button class="btn" style="font-size:11px" onclick="toast2('Email sent to Liam O\'Brien with OCP renewal information')">Contact pharmacist</button>
+      </div>
+    </div>
+    <div style="border-left:3px solid var(--g);border-radius:10px;padding:14px;background:var(--gl)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <i class="ti ti-vaccine" style="font-size:16px;color:var(--gd)" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:500;color:var(--gd)">Injection training added</span>
+        <span class="pill pg" style="margin-left:auto">Auto-resolved</span>
+      </div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:2px">Divyam · OCP #635784 · Pharmacist</div>
+      <div style="font-size:11px;color:var(--gd);margin-bottom:8px">Detected: Jun 3, 2026 · Injection training: No → Yes</div>
+      <div style="font-size:12px;color:var(--gd);line-height:1.6;margin-bottom:10px">Profile automatically updated. Divyam now carries the injection certification badge and is eligible for shifts requiring injection-certified pharmacists. Pharmacies filtering for injection-certified relief will now see Divyam as a match.</div>
+      <button class="btn" style="border-color:var(--g);color:var(--gd);font-size:11px" onclick="toast2('Divyam notified of profile update — now appearing in injection-cert searches')">Notify pharmacist</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="st"><i class="ti ti-history" aria-hidden="true"></i>Full change history</div>
+    <table><thead><tr><th>Date</th><th>Pharmacist</th><th>OCP #</th><th>Change</th><th>From</th><th>To</th><th>Platform impact</th><th>Status</th></tr></thead><tbody>
+    ${[["Jun 3","Liam O'Brien","623291","Status change","Active","Suspended","2 bookings at risk","pr","Needs action"],["Jun 3","Divyam","635784","Injection training","No","Yes","Profile updated","pg","Auto-resolved"],["Jun 1","New registration","638421","New registrant","—","Active","Added to registry","pb","Auto-added"],["May 30","Priya Arora","624073","Status change","Suspended","Active","Reinstated","pg","Auto-resolved"],["May 30","Angela Torres","629504","Status change","Active","Cancelled for Non-Payment","1 booking cancelled","pr","Resolved"],["May 30","New registration","638105","New registrant","—","Active","Added to registry","pb","Auto-added"]].map(([d,n,ocp,type,from,to,impact,p,st])=>`<tr><td>${d}</td><td style="font-weight:500">${n}</td><td style="color:var(--muted)">${ocp}</td><td>${type}</td><td style="color:var(--muted)">${from}</td><td style="font-weight:500">${to}</td><td style="font-size:10px;color:var(--muted)">${impact}</td><td><span class="pill ${p}">${st}</span></td></tr>`).join('')}
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ECONNECT FEED -->
+<div class="panel" id="panel-econnect">
+  <div class="h2">OCP eConnect feed</div>
+  <p class="sub">Official OCP regulatory updates · parsed from ocpinfo.com · surfaced inside PharmRelief like a SharePoint news feed</p>
+  <div class="info">
+    <div style="font-size:12px;font-weight:500;color:#0C447C;margin-bottom:3px">How this works</div>
+    <div style="font-size:11px;color:var(--b);line-height:1.6">OCP eConnect is a public web page on ocpinfo.com — no API key or login required. We scrape the article list and content each time OCP publishes, parse it into structured cards, tag each article by who it affects (pharmacists, pharmacy owners, or both), and surface it inside PharmRelief as a news feed. Agents and pharmacies can pin urgent regulatory items to their dashboard and push alerts to their pharmacists.</div>
+  </div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
+    ${['All','Mandatory','Scope of practice','Registration','Drug safety','Policy updates'].map((t,i)=>`<button style="font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--bdr);background:${i===0?'var(--gl)':'var(--surf)'};color:${i===0?'var(--gd)':'var(--muted)'};cursor:pointer;font-family:inherit">${t}</button>`).join('')}
+  </div>
+  ${[
+    {date:'Jun 3, 2026',title:'Register Today for Spring 2026 Regional Meetings',cat:'Mandatory',catCls:'pr',summary:'OCP is hosting Regional Meetings across Ontario this spring. All registered pharmacists and pharmacy technicians are encouraged to attend. Topics include expanded scope of practice, CQI requirements, and the new minor ailments framework.',impact:'Affects all OCP-registered pharmacists on your platform',url:'https://ocpinfo.com/econnect/e-connect-june-3-2026/'},
+    {date:'Jun 3, 2026',title:'Clarifying Scope of Practice for Pharmacy Professionals',cat:'Scope of practice',catCls:'pv',summary:'The College has released updated guidance clarifying which activities are within scope for pharmacists versus pharmacy technicians, particularly around the expanded prescribing authorities introduced in 2023. Relief pharmacists should review this before taking hospital and clinic shifts.',impact:'Relevant to pharmacists booking hospital and clinic shifts',url:'https://ocpinfo.com/econnect/e-connect-june-3-2026/'},
+    {date:'Jun 3, 2026',title:'New Medication Safety Resource: Sample Agenda for CQI Meetings',cat:'Policy updates',catCls:'pa',summary:'OCP has published a new sample agenda for Continuous Quality Improvement meetings. Designated Managers at accredited pharmacies are responsible for facilitating CQI. Relevant for pharmacy owners and Associates using PharmRelief.',impact:'Informational for pharmacy owners and Associates',url:'https://ocpinfo.com/econnect/e-connect-june-3-2026/'},
+    {date:'May 20, 2026',title:'Ontario Pharmacy Health Program Available to All Registrants',cat:'Registration',catCls:'pb',summary:'OCP has launched the Ontario Pharmacy Health Program, providing confidential support services to pharmacists and pharmacy technicians dealing with mental health, substance use, or personal challenges affecting their practice.',impact:'Welfare resource to share with pharmacists on your platform',url:'https://ocpinfo.com/econnect/e-connect-may-20-2026/'},
+    {date:'May 20, 2026',title:'Share Your Feedback on Proposed Learning Requirements for Specified Expanded Scope Activities',cat:'Policy updates',catCls:'pa',summary:'OCP is consulting on proposed learning requirements for specified expanded scope activities including prescribing for minor ailments. Pharmacists can submit feedback through the OCP website before the consultation closes.',impact:'Consultation — pharmacists may wish to participate',url:'https://ocpinfo.com/econnect/e-connect-may-20-2026/'},
+  ].map(a=>`
+  <div class="news-card">
+    <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
+      <span class="pill ${a.catCls}">${a.cat}</span>
+      <span style="font-size:10px;color:var(--muted)">${a.date}</span>
+    </div>
+    <div style="font-size:13px;font-weight:500;margin-bottom:6px">${a.title}</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px">${a.summary}</div>
+    <div style="font-size:11px;padding:6px 10px;border-radius:6px;background:var(--bg);margin-bottom:10px">
+      <span style="font-weight:500">Platform impact: </span><span style="color:var(--muted)">${a.impact}</span>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn" style="font-size:10px;padding:3px 10px" onclick="toast2('Pinned to pharmacist dashboard')">Pin to dashboard</button>
+      <button class="btn" style="font-size:10px;padding:3px 10px" onclick="toast2('Alert sent to all active pharmacists')">Alert pharmacists</button>
+      <button class="btn" style="font-size:10px;padding:3px 10px" onclick="toast2('Alert sent to all pharmacy owners')">Alert pharmacy owners</button>
+      <a href="${a.url}" target="_blank" style="font-size:10px;padding:3px 10px;border-radius:8px;border:0.5px solid var(--bdr);color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:4px">Read on OCP <i class="ti ti-external-link" style="font-size:11px" aria-hidden="true"></i></a>
+    </div>
+  </div>`).join('')}
+</div>
+
+<!-- LIVE VERIFY -->
+<div class="panel" id="panel-verify">
+  <div class="h2">Live OCP verification</div>
+  <p class="sub">Look up any OCP number against the public register · used automatically when a pharmacist self-registers on PharmRelief</p>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="st"><i class="ti ti-search" aria-hidden="true"></i>Verify an OCP registration</div>
+      <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px">Enter an OCP number to check status, type, injection cert, conditions, and discipline against the public register. This runs automatically when any pharmacist signs up for PharmRelief.</p>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:500">OCP registration number</div>
+        <div style="display:flex;gap:8px">
+          <input class="inp" id="ocp-inp" placeholder="e.g. 625723" style="flex:1" onkeydown="if(event.key==='Enter')doVerify()"/>
+          <button class="btn-g" onclick="doVerify()"><i class="ti ti-search" style="font-size:13px" aria-hidden="true"></i> Verify</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:500">Quick test — known OCP numbers:</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[['625723','Goutham Kumar'],['624073','Priya Arora'],['631425','Sara Johansson'],['623291','Liam (suspended)'],['999999','Unknown #']].map(([ocp,name])=>`<button style="font-size:11px;padding:4px 11px;border-radius:8px;border:0.5px solid var(--bdr);background:var(--bg);cursor:pointer;font-family:inherit" onclick="document.getElementById('ocp-inp').value='${ocp}';doVerify()">#${ocp} ${name}</button>`).join('')}
+      </div>
+      <div id="verif-result" style="margin-top:14px;display:none;border-radius:10px;padding:14px"></div>
+    </div>
+    <div class="card">
+      <div class="st"><i class="ti ti-code" aria-hidden="true"></i>Verification implementation</div>
+      <div class="code">// src/api/verify-ocp.ts
+// Called when pharmacist submits registration form
+
+export async function verifyOCPNumber(ocpNumber: string) {
+  const response = await fetch(
+    `https://members.ocpinfo.com/tcpr/public/pr/en/`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        registration_number: ocpNumber,
+        member_status: 'All'
+      })
+    }
+  )
+  const html = await response.text()
+
+  const result = {
+    found:      html.includes('Registration Number'),
+    name:       extractBetween(html, 'Name</td>', '</td>'),
+    type:       extractBetween(html, 'Registrant Type</td>', '</td>'),
+    status:     extractBetween(html, 'Member Status</td>', '</td>'),
+    injection:  html.includes('Injection Training: Yes'),
+    conditions: html.includes('Terms, Conditions or Limitations'),
+    discipline: html.includes('Discipline History'),
+  }
+
+  result.approved = (
+    result.found
+    && result.status === 'Active'
+    && !result.conditions
+    && !result.discipline
+  )
+
+  // Log to audit trail
+  await logVerification(ocpNumber, result)
+
+  // If suspended — notify agency manager
+  if (result.found && result.status !== 'Active') {
+    await alertAgencyManager(ocpNumber, result.status)
+  }
+
+  return result
+}</div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTOMATION -->
+<div class="panel" id="panel-automation">
+  <div class="h2">Automation rules</div>
+  <p class="sub">What PharmRelief does automatically when OCP registry changes are detected in the nightly sync</p>
+  <div class="g2">
+    ${[
+      ['Pharmacist suspended','pr','<i class="ti ti-user-x"></i>','Auto-cancel all upcoming bookings · Notify affected pharmacies with urgency alert · Suspend platform access immediately · Send pharmacist OCP renewal information · Log to compliance audit trail'],
+      ['Pharmacist revoked','pr','<i class="ti ti-ban"></i>','Immediately cancel all bookings · Permanent platform suspension · Alert agency manager · Notify all pharmacies the pharmacist has previously worked at via PharmRelief'],
+      ['Pharmacist deceased','pr','<i class="ti ti-heart-off"></i>','Mark profile as inactive · Cancel all bookings · Internal record only — no public notification · Alert agency manager quietly'],
+      ['Pharmacist reinstated','pg','<i class="ti ti-user-check"></i>','Re-enable platform access · Restore profile and shift history · Notify agent of reinstatement · Pharmacist visible in search and eligible for bookings again'],
+      ['Injection training added','pg','<i class="ti ti-vaccine"></i>','Update profile badge · Make eligible for injection-required shifts · Notify pharmacist of updated profile · Re-run shift matching for pending injection shifts'],
+      ['New Active registration','pb','<i class="ti ti-user-plus"></i>','Add to PharmRelief registry database · Flag as "potential recruit" for agent outreach · Available in public pharmacist search · Send welcome email if contact on file'],
+      ['Conditions or limitations','pa','<i class="ti ti-alert-triangle"></i>','Flag profile for manual review · Restrict from new bookings until agency manager approves · Alert compliance team · Record in audit trail'],
+      ['Any status change','pa','<i class="ti ti-git-diff"></i>','Log to full audit trail with timestamp and source · Weekly change digest emailed to agency manager · Stored in sync_log for 24 months'],
+    ].map(([trigger,p,icon,actions])=>`
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:16px;color:var(--g)">${icon}</span>
+        <div style="flex:1;font-size:12px;font-weight:500">When: ${trigger}</div>
+        <span class="pill ${p}">${p==='pg'?'Auto-resolve':p==='pr'?'Auto-action':'Auto-flag'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8">${actions.split(' · ').map(a=>`<div style="display:flex;gap:5px"><span style="color:var(--g);flex-shrink:0">→</span>${a}</div>`).join('')}</div>
+    </div>`).join('')}
+  </div>
+</div>
+
+<!-- WHAT OCP PROVIDES -->
+<div class="panel" id="panel-howto">
+  <div class="h2">What OCP actually provides — complete honest guide</div>
+  <p class="sub">Exactly what is and isn't available from the Ontario College of Pharmacists for third-party integration</p>
+  <div class="warn-box">
+    <div style="font-size:13px;font-weight:500;color:#633806;margin-bottom:5px">OCP eConnect is a newsletter, not a data API</div>
+    <div style="font-size:12px;color:#854F0B;line-height:1.7">OCP eConnect is an email newsletter published bi-weekly by the Ontario College of Pharmacists. It does not have an RSS feed, webhook, API endpoint, or programmatic subscription mechanism available to third parties. OCP does not offer any live data API for their member registry to external organisations. Everything in the OCP Data Hub is built on top of OCP's publicly accessible data only.</div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--gd);margin-bottom:12px">✓ What IS available from OCP (public)</div>
+      ${[['Public register CSV export','Available via the Find a Pharmacy/Professional search tool on members.ocpinfo.com. Export between 5pm–midnight only. Contains: name, OCP number, member type, status, injection training. Your two uploaded CSV files came from this exact source.','pg'],['eConnect web pages','Published at ocpinfo.com/news-and-resources/e-connect — fully public HTML, no login required. We parse and display these as a news feed inside PharmRelief.','pg'],['Individual pharmacist lookup','Public search at members.ocpinfo.com — enter any OCP number and get name, status, type, conditions, discipline history. Can be queried programmatically for one-at-a-time lookups.','pg'],['Pharmacy location data','Same public register — pharmacy name, accreditation number, address, phone number. CSV export available in the same overnight window.','pg'],['Discipline decisions','Published publicly on ocpinfo.com — discipline history, hearing outcomes, terms and conditions imposed. Checkable per OCP number.','pg']].map(([t,d,p])=>`<div style="padding:9px 0;border-bottom:0.5px solid var(--bdr)"><div style="font-size:12px;font-weight:500;margin-bottom:3px;color:var(--gd)">✓ ${t}</div><div style="font-size:11px;color:var(--muted);line-height:1.5">${d}</div></div>`).join('')}
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--r);margin-bottom:12px">✗ What is NOT available from OCP</div>
+      ${[['Live API or webhook','OCP does not offer a REST API, GraphQL endpoint, webhook, or real-time data feed to any third party. No API key exists to apply for.'],['Pharmacist contact details','Phone numbers, email addresses, and home addresses are not in the public register. Only self-registered pharmacists can provide their own contact details to PharmRelief.'],['RSS feed for eConnect','The eConnect newsletter has no RSS feed. It is an email list and a public web page only — no machine-readable feed.'],['Bulk download without time restriction','The CSV export is only available between 5pm and midnight due to OCP server restrictions. No exceptions are granted.'],['Real-time status push','OCP will not push status changes to you. You must pull by downloading the CSV nightly and diffing it yourself.'],['SharePoint or Teams integration','OCP does not expose any internal systems or SharePoint instance to external partners.']].map(([t,d])=>`<div style="padding:9px 0;border-bottom:0.5px solid var(--bdr)"><div style="font-size:12px;font-weight:500;margin-bottom:3px;color:var(--r)">✗ ${t}</div><div style="font-size:11px;color:var(--muted);line-height:1.5">${d}</div></div>`).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <div class="st"><i class="ti ti-mail" aria-hidden="true"></i>How to approach OCP for a formal data partnership (at scale)</div>
+    <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px">Once PharmRelief reaches significant scale — 100+ pharmacies, 200+ active pharmacists — it is worth approaching OCP formally. Here is how that conversation would go:</p>
+    <div class="g3">
+      ${[
+        ['Who to contact','Director of Registration and Registrant Services · registrantservices@ocpinfo.com · 416-962-4861 ext 3400 · Best approached after you have public proof of scale (press coverage, case studies, OPA endorsement)'],
+        ['What to propose','A formal data-sharing agreement where OCP provides a nightly secure SFTP drop of the active register CSV — eliminating the 5pm–midnight window restriction and removing the need to scrape the web interface'],
+        ["What you offer in return","PharmRelief improves patient safety by ensuring only OCP-verified pharmacists fill relief shifts. OCP's mandate is public protection — you are a compliance partner. Bring data: 200 pharmacists verified, zero non-OCP pharmacists placed, fill rate, NPS."],
+      ].map(([t,d])=>`<div style="background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:12px;font-weight:500;margin-bottom:5px">${t}</div><div style="font-size:11px;color:var(--muted);line-height:1.5">${d}</div></div>`).join('')}
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function show(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+function toast2(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('tmsg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+let syncing=false;
+function runSync(){
+  if(syncing)return;syncing=true;
+  const prog=document.getElementById('prog-bar');
+  const wrap=document.getElementById('sync-progress');
+  if(wrap)wrap.style.display='block';
+  toast2('OCP registry sync started…');
+  let pct=0;
+  const iv=setInterval(()=>{pct=Math.min(pct+Math.random()*8,97);if(prog)prog.style.width=pct+'%';},200);
+  setTimeout(()=>{clearInterval(iv);if(prog)prog.style.width='100%';toast2('Sync complete — 28,909 records · 2 changes detected');setTimeout(()=>{if(wrap)wrap.style.display='none';syncing=false;},1000);},3500);
+}
+
+const KNOWN={
+  '625723':{name:'Goutham Kumar',type:'Pharmacist',status:'Active',injection:true,conditions:false,discipline:false,approved:true},
+  '624073':{name:'Priya Arora',type:'Pharmacist',status:'Active',injection:true,conditions:false,discipline:false,approved:true},
+  '631425':{name:'Sara Johansson',type:'Pharmacist',status:'Active',injection:false,conditions:false,discipline:false,approved:true},
+  '623291':{name:"Liam O'Brien",type:'Pharmacist',status:'Suspended for Non-Payment',injection:true,conditions:true,discipline:false,approved:false},
+  '635784':{name:'Divyam',type:'Pharmacist',status:'Active',injection:true,conditions:false,discipline:false,approved:true},
+  '630092':{name:'Adabpreet Kaur',type:'Pharmacy Technician',status:'Active',injection:false,conditions:false,discipline:false,approved:true},
+};
+
+function doVerify(){
+  const ocp=document.getElementById('ocp-inp').value.trim();
+  const res=document.getElementById('verif-result');
+  if(!ocp){res.style.display='none';return;}
+  res.style.display='block';
+  res.style.background='var(--bg)';
+  res.innerHTML=`<div style="font-size:12px;color:var(--muted);text-align:center;padding:14px"><i class="ti ti-loader-2" style="font-size:20px;display:inline-block;animation:spin 1s linear infinite" aria-hidden="true"></i><br><span style="margin-top:4px;display:block">Querying OCP public register…</span></div>`;
+
+  setTimeout(()=>{
+    const d=KNOWN[ocp];
+    if(!d){
+      res.style.background='var(--rl)';
+      res.innerHTML=`<div style="display:flex;gap:9px;align-items:flex-start"><i class="ti ti-circle-x" style="font-size:22px;color:var(--r);flex-shrink:0" aria-hidden="true"></i><div><div style="font-size:13px;font-weight:500;color:var(--r);margin-bottom:4px">OCP #${ocp} — not found in active register</div><div style="font-size:12px;color:#791F1F;line-height:1.6">This registration number does not match any record in the OCP public register. The pharmacist may be inactive, revoked, or have entered an incorrect number. Do not approve this registration.</div></div></div>`;
+      return;
+    }
+    const ok=d.approved;
+    res.style.background=ok?'var(--gl)':'var(--al)';
+    res.innerHTML=`
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+      <i class="ti ti-${ok?'circle-check':'alert-circle'}" style="font-size:22px;color:${ok?'var(--g)':'var(--a)'}" aria-hidden="true"></i>
+      <div><div style="font-size:13px;font-weight:500;color:${ok?'#085041':'#633806'}">${ok?'✓ Verification passed — approved to join PharmRelief':'⚠ Flagged — manual review required before approving'}</div>
+      <div style="font-size:10px;color:${ok?'var(--gd)':'var(--a)'}">Source: OCP public register · ${new Date().toLocaleTimeString()}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px">
+      ${[['OCP number',ocp],['Full name',d.name],['Member type',d.type],['Status',d.status],['Injection training',d.injection?'✓ Certified':'Not certified'],['Discipline history',d.discipline?'⚠ Yes':'None on record'],['Conditions / limitations',d.conditions?'⚠ Yes':'None on record'],['Platform decision',ok?'✓ Approved':'✗ Manual review required']].map(([l,v])=>`<div style="background:rgba(255,255,255,.65);border-radius:6px;padding:8px"><div style="font-size:10px;color:${ok?'var(--gd)':'#633806'};margin-bottom:2px">${l}</div><div style="font-size:12px;font-weight:500">${v}</div></div>`).join('')}
+    </div>
+    ${ok?`<button class="btn-g" style="width:100%" onclick="toast2('${d.name} approved and added to PharmRelief · Welcome email sent')">Approve — add to PharmRelief</button>`:
+    `<div style="display:flex;gap:8px"><button class="btn" style="flex:1;border-color:var(--a);color:var(--a)" onclick="toast2('Flagged for manual review · Agency manager notified')">Flag for review</button><button class="btn" style="border-color:var(--r);color:var(--r)" onclick="toast2('Registration rejected · Pharmacist notified')">Reject</button></div>`}`;
+  },1800);
+}
+</script>
+</body>
+</html>
