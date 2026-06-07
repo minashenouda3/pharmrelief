@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmRelief — Operations Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g50:#E1F5EE;--g100:#9FE1CB;--g200:#5DCAA5;--g600:#0F6E56;--g800:#085041;--g900:#04342C;
+  --a50:#FAEEDA;--a100:#FAC775;--a400:#BA7517;--a600:#854F0B;--a800:#633806;
+  --c50:#FAECE7;--c100:#F5C4B3;--c400:#D85A30;--c600:#993C1D;
+  --gr50:#F1EFE8;--gr100:#D3D1C7;--gr400:#888780;--gr600:#5F5E5A;--gr800:#444441;
+  --b50:#E6F1FB;--b100:#B5D4F4;--b400:#378ADD;--b600:#185FA5;--b800:#0C447C;
+  --r50:#FCEBEB;--r400:#E24B4A;--r600:#A32D2D;
+  --bg:#F8F7F4;--surf:#FFFFFF;--bdr:rgba(0,0,0,0.10);
+  --t1:#1A1916;--t2:#5F5E5A;--t3:#888780;
+  --rad:10px;--radl:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;display:flex;}
+.sidebar{width:220px;min-height:100vh;background:var(--g900);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;}
+.slogo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.slogo .wm{font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--g100);letter-spacing:-0.3px;}
+.slogo .tl{font-size:10px;color:var(--g200);margin-top:2px;letter-spacing:0.5px;text-transform:uppercase;}
+.ssec{padding:16px 12px 4px;font-size:9px;color:var(--g200);letter-spacing:1.2px;text-transform:uppercase;font-weight:600;}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 14px;margin:1px 8px;border-radius:8px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer;transition:all 0.15s;border:none;background:none;width:calc(100% - 16px);text-align:left;}
+.ni:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);}
+.ni.active{background:rgba(255,255,255,0.12);color:#fff;font-weight:500;}
+.sbot{margin-top:auto;padding:16px 8px;border-top:1px solid rgba(255,255,255,0.08);}
+.uchip{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);}
+.uav{width:28px;height:28px;border-radius:50%;background:var(--g600);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--g100);flex-shrink:0;}
+.un{font-size:12px;color:rgba(255,255,255,0.8);font-weight:500;}
+.ur{font-size:10px;color:var(--g200);}
+.main{margin-left:220px;flex:1;min-height:100vh;}
+.topbar{background:var(--surf);border-bottom:1px solid var(--bdr);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.tbtitle{font-family:'Fraunces',serif;font-size:18px;font-weight:500;}
+.tbr{display:flex;align-items:center;gap:12px;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.bg{background:var(--g50);color:var(--g800);}
+.ba{background:var(--a50);color:var(--a600);}
+.br{background:var(--r50);color:var(--r600);}
+.bb{background:var(--b50);color:var(--b800);}
+.bgr{background:var(--gr50);color:var(--gr800);}
+.dot{width:6px;height:6px;border-radius:50%;}
+.dg{background:var(--g200);}.da{background:var(--a400);}.dr{background:var(--r400);}
+.page{padding:28px 32px;display:none;}
+.page.active{display:block;}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radl);padding:20px 24px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;}
+.stitle{font-family:'Fraunces',serif;font-size:16px;font-weight:500;margin-bottom:14px;}
+.lbl{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:4px;}
+.val{font-size:26px;font-weight:600;font-family:'DM Mono',monospace;}
+.sub{font-size:12px;color:var(--t2);margin-top:3px;}
+.mc{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rad);padding:16px 18px;}
+.du{font-size:11px;margin-top:4px;color:var(--g600);}
+.dd{font-size:11px;margin-top:4px;color:var(--r600);}
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 12px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;border-bottom:1px solid var(--bdr);background:var(--gr50);}
+td{padding:10px 12px;border-bottom:1px solid var(--bdr);color:var(--t1);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#FAFAF8;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all 0.15s;font-family:'Instrument Sans',sans-serif;}
+.btp{background:var(--g900);color:#fff;}
+.btp:hover{background:var(--g800);}
+.bts{background:var(--surf);color:var(--t1);border:1px solid var(--bdr);}
+.bts:hover{background:var(--gr50);}
+.btd{background:var(--r50);color:var(--r600);border:1px solid rgba(226,75,74,0.2);}
+.bta{background:var(--a50);color:var(--a600);border:1px solid rgba(186,117,23,0.2);}
+.btsm{padding:5px 11px;font-size:12px;}
+.cr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid var(--bdr);border-radius:var(--rad);margin-bottom:10px;background:var(--surf);}
+.cr.pending{border-color:rgba(186,117,23,0.3);background:var(--a50);}
+.cr.partial{border-color:rgba(55,138,221,0.3);background:var(--b50);}
+.cr.locked{border-color:rgba(15,110,86,0.3);background:var(--g50);}
+.csteps{display:flex;gap:8px;align-items:center;}
+.sc{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.scd{background:var(--g50);color:var(--g800);}
+.scp{background:var(--a50);color:var(--a600);}
+.scw{background:var(--gr50);color:var(--gr600);}
+.alert{padding:12px 16px;border-radius:var(--rad);margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;font-size:13px;}
+.alr{background:var(--r50);border:1px solid rgba(226,75,74,0.25);color:var(--r600);}
+.ala{background:var(--a50);border:1px solid rgba(186,117,23,0.25);color:var(--a800);}
+.alg{background:var(--g50);border:1px solid rgba(15,110,86,0.25);color:var(--g800);}
+.tl{position:relative;padding-left:20px;}
+.tl::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:1px;background:var(--bdr);}
+.tli{position:relative;margin-bottom:16px;}
+.tld{position:absolute;left:-17px;top:3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--surf);}
+.tlg{background:var(--g200);}.tla{background:var(--a400);}.tlr{background:var(--r400);}.tlgr{background:var(--gr100);}
+.tlt{font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;}
+.tltx{font-size:12px;color:var(--t2);margin-top:2px;}
+.kbar{height:6px;background:var(--gr50);border-radius:3px;overflow:hidden;margin-top:8px;}
+.kfg{background:var(--g200);}.kfa{background:var(--a400);}.kfr{background:var(--r400);}
+.kf{height:100%;border-radius:3px;}
+input[type="text"],input[type="email"],select,textarea{width:100%;padding:9px 12px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;font-family:'Instrument Sans',sans-serif;color:var(--t1);background:var(--surf);outline:none;transition:border-color 0.15s;}
+input:focus,select:focus,textarea:focus{border-color:var(--g600);}
+.fg{margin-bottom:14px;}
+.fl{font-size:12px;color:var(--t2);font-weight:500;margin-bottom:5px;display:block;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bdr);margin-bottom:20px;}
+.tab{padding:8px 16px;font-size:13px;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;}
+.tab.active{color:var(--g900);border-bottom-color:var(--g900);font-weight:500;}
+.ci{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;}
+.ci:hover{background:var(--gr50);}
+.cb{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--gr100);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}
+.cb.checked{background:var(--g900);border-color:var(--g900);}
+.cb.checked::after{content:'checkmark';font-size:0;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);display:block;margin-top:-2px;}
+.clf{font-size:13px;color:var(--t1);}
+.mcard{background:var(--g900);border-radius:var(--radl);padding:20px 24px;color:white;}
+.mnum{font-family:'DM Mono',monospace;font-size:40px;font-weight:400;color:var(--g100);line-height:1;}
+.mlbl{font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;}
+.eo{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--bdr);border-radius:var(--rad);margin-bottom:8px;}
+.ef{font-size:13px;font-weight:500;}
+.ed{font-size:11px;color:var(--t3);margin-top:2px;}
+.ni-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1px solid var(--bdr);border-radius:var(--rad);margin-bottom:8px;}
+.ni-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ni-tt{font-size:13px;font-weight:500;}
+.ni-bd{font-size:12px;color:var(--t2);margin-top:2px;}
+.ni-tm{font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;margin-top:4px;}
+.pc{border:1px solid var(--bdr);border-radius:var(--radl);overflow:hidden;margin-bottom:12px;}
+.ph{padding:16px 18px;display:flex;align-items:flex-start;justify-content:space-between;}
+.pt{font-size:15px;font-weight:600;}
+.pl{font-size:12px;color:var(--t2);margin-top:3px;}
+.pb{padding:0 18px 16px;border-top:1px solid var(--bdr);padding-top:14px;}
+.dc{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;background:var(--gr50);border:1px solid var(--bdr);border-radius:6px;font-size:11px;color:var(--t2);margin:3px;}
+.can-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--bdr);}
+.can-row:last-child{border-bottom:none;}
+.cav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+.cbar{flex:1;}
+.cpct{font-size:12px;font-weight:500;}
+.ctrack{height:4px;background:var(--gr50);border-radius:2px;margin-top:4px;overflow:hidden;}
+.cfill{height:100%;border-radius:2px;}
+.mo{display:none;position:absolute;top:0;left:0;right:0;bottom:0;min-height:100%;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
+.mo.open{display:flex;}
+.modal{background:var(--surf);border-radius:var(--radl);padding:24px;width:440px;max-width:95%;}
+.mt{font-family:'Fraunces',serif;font-size:17px;font-weight:500;margin-bottom:16px;}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+.sms{background:var(--g900);color:var(--g50);border-radius:16px 16px 4px 16px;padding:10px 14px;font-size:13px;line-height:1.5;max-width:280px;margin-bottom:8px;}
+.smst{font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:12px;}
+.blrow{background:var(--r50);border:1px solid rgba(226,75,74,0.2);border-radius:var(--rad);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.fb{display:flex;align-items:center;justify-content:space-between;}
+.fg2{display:flex;align-items:center;gap:10px;}
+.mb4{margin-bottom:4px;}.mb8{margin-bottom:8px;}.mb12{margin-bottom:12px;}.mb16{margin-bottom:16px;}.mb20{margin-bottom:20px;}.mb24{margin-bottom:24px;}.mt16{margin-top:16px;}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="slogo">
+    <div class="wm">PharmRelief</div>
+    <div class="tl">PharmRelief Operations</div>
+  </div>
+  <div class="ssec">Operations</div>
+  <button class="ni active" onclick="showPage('dashboard',this)">⬛ Dashboard</button>
+  <button class="ni" onclick="showPage('shifts',this)">🗓 Shifts</button>
+  <button class="ni" onclick="showPage('dispatch',this)">🚨 Dispatch &nbsp;<span class="badge br" style="padding:2px 7px;font-size:10px;margin-left:auto;">2</span></button>
+  <div class="ssec">Workforce</div>
+  <button class="ni" onclick="showPage('jobs',this)">📋 Job Postings</button>
+  <button class="ni" onclick="showPage('candidates',this)">👤 Candidates</button>
+  <div class="ssec">Finance</div>
+  <button class="ni" onclick="showPage('mileage',this)">📍 Mileage Tracker</button>
+  <button class="ni" onclick="showPage('financials',this)">💰 Financials</button>
+  <div class="ssec">Platform</div>
+  <button class="ni" onclick="showPage('notifications',this)">🔔 Notifications</button>
+  <div class="sbot">
+    <div class="uchip">
+      <div class="uav">AD</div>
+      <div><div class="un">Admin</div><div class="ur">Platform Admin</div></div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+<div class="topbar">
+  <div class="tbtitle" id="tbt">Operations Dashboard</div>
+  <div class="tbr">
+    <span class="badge bg"><span class="dot dg"></span> Platform Live</span>
+    <span style="font-size:12px;color:var(--t3);font-family:'DM Mono',monospace;">pharmrelief.ca</span>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard" style="position:relative;">
+  <div class="g4 mb20">
+    <div class="mc"><div class="lbl">Active Shifts Today</div><div class="val">8</div><div class="du">↑ 2 vs yesterday</div></div>
+    <div class="mc"><div class="lbl">Fill Rate (30d)</div><div class="val">94<span style="font-size:16px;color:var(--t3)">%</span></div><div class="kbar"><div class="kf kfg" style="width:94%"></div></div></div>
+    <div class="mc"><div class="lbl">No-show Rate (30d)</div><div class="val">3<span style="font-size:16px;color:var(--t3)">%</span></div><div class="kbar"><div class="kf kfa" style="width:3%"></div></div></div>
+    <div class="mc"><div class="lbl">Avg Response Time</div><div class="val">11<span style="font-size:16px;color:var(--t3)">min</span></div><div class="du">Target &lt;15 min ✓</div></div>
+  </div>
+  <div class="g2 mb20" style="gap:16px;">
+    <div class="card">
+      <div class="stitle">🚨 Active Alerts</div>
+      <div class="alert alr"><span>🔴</span><div><div style="font-weight:500;">No-show Alert — Shift #SH-041</div><div style="font-size:12px;margin-top:2px;">Rexall Lawrence Ave — 9 AM shift. Pharmacist unresponsive. Auto-replacement triggered.</div></div></div>
+      <div class="alert ala"><span>⚠️</span><div><div style="font-weight:500;">Pending Confirm — Shift #SH-047</div><div style="font-size:12px;margin-top:2px;">Shoppers Yonge — Pharmacy confirmed. Waiting on pharmacist.</div></div></div>
+      <div class="alert alg"><span>✅</span><div><div style="font-weight:500;">8 Shifts Locked for Today</div><div style="font-size:12px;margin-top:2px;">All double-confirmed. No further action needed.</div></div></div>
+    </div>
+    <div class="card">
+      <div class="stitle">📊 Regional Breakdown</div>
+      <table><thead><tr><th>Region</th><th>Shifts</th><th>Fill Rate</th><th>Status</th></tr></thead><tbody>
+        <tr><td>GTA North</td><td>3</td><td>100%</td><td><span class="badge bg">On track</span></td></tr>
+        <tr><td>GTA West</td><td>2</td><td>100%</td><td><span class="badge bg">On track</span></td></tr>
+        <tr><td>GTA East</td><td>2</td><td>50%</td><td><span class="badge br">Alert</span></td></tr>
+        <tr><td>Downtown</td><td>1</td><td>100%</td><td><span class="badge bg">On track</span></td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="g2" style="gap:16px;">
+    <div class="card">
+      <div class="stitle">📅 Upcoming Shifts</div>
+      <table><thead><tr><th>Date</th><th>Pharmacy</th><th>Pharmacist</th><th>Status</th></tr></thead><tbody>
+        <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 06</td><td>Acacia Pharmacy</td><td>Amira Soliman</td><td><span class="badge bg">Locked</span></td></tr>
+        <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 07</td><td>Shoppers Yonge</td><td>Dina Khalil</td><td><span class="badge ba">Partial</span></td></tr>
+        <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 08</td><td>Guardian Pharmacy</td><td>TBD</td><td><span class="badge bgr">Open</span></td></tr>
+        <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 09</td><td>Rexall Eglinton</td><td>Nadia Hassan</td><td><span class="badge bg">Locked</span></td></tr>
+        <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 10</td><td>Pharmasave Bloor</td><td>Sara Ahmed</td><td><span class="badge bg">Locked</span></td></tr>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="stitle">📈 KPI Summary</div>
+      <div style="margin-bottom:14px;"><div class="fb mb4"><span style="font-size:13px;">Fill Rate</span><span style="font-size:13px;font-weight:500;color:var(--g800);">94%</span></div><div class="kbar"><div class="kf kfg" style="width:94%"></div></div><div style="font-size:10px;color:var(--t3);margin-top:3px;">Target: 95%</div></div>
+      <div style="margin-bottom:14px;"><div class="fb mb4"><span style="font-size:13px;">No-show Rate</span><span style="font-size:13px;font-weight:500;color:var(--a600);">3%</span></div><div class="kbar"><div class="kf kfa" style="width:3%"></div></div><div style="font-size:10px;color:var(--t3);margin-top:3px;">Target: &lt;5%</div></div>
+      <div style="margin-bottom:14px;"><div class="fb mb4"><span style="font-size:13px;">Avg Response Time</span><span style="font-size:13px;font-weight:500;color:var(--g800);">11 min</span></div><div class="kbar"><div class="kf kfg" style="width:73%"></div></div><div style="font-size:10px;color:var(--t3);margin-top:3px;">Target: &lt;15 min</div></div>
+      <div><div class="fb mb4"><span style="font-size:13px;">Pharmacist Satisfaction</span><span style="font-size:13px;font-weight:500;color:var(--g800);">4.8 / 5</span></div><div class="kbar"><div class="kf kfg" style="width:96%"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SHIFTS -->
+<div class="page" id="page-shifts" style="position:relative;">
+  <div class="fb mb20">
+    <div style="font-size:13px;color:var(--t2);">Double-Confirm System — both parties must confirm before shift locks.</div>
+    <button class="btn btp" onclick="document.getElementById('nsm').classList.add('open')">+ New Shift</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="fShifts('all',this)">All Shifts</div>
+    <div class="tab" onclick="fShifts('locked',this)">Locked</div>
+    <div class="tab" onclick="fShifts('partial',this)">Awaiting Confirm</div>
+    <div class="tab" onclick="fShifts('pending',this)">Open</div>
+  </div>
+  <div id="slist">
+    <div class="cr locked si" data-s="locked">
+      <div><div style="font-size:14px;font-weight:500;">#SH-038 — Acacia Pharmacy</div><div style="font-size:12px;color:var(--t2);">Jun 6, 9:00 AM–5:00 PM · Amira Soliman, RPh</div></div>
+      <div class="csteps"><span class="sc scd">✓ Pharmacy</span><span class="sc scd">✓ Pharmacist</span><span class="badge bg">Locked</span></div>
+    </div>
+    <div class="cr partial si" data-s="partial">
+      <div><div style="font-size:14px;font-weight:500;">#SH-047 — Shoppers Drug Mart Yonge</div><div style="font-size:12px;color:var(--t2);">Jun 7, 8:30 AM–4:30 PM · Dina Khalil, RPh</div></div>
+      <div class="csteps"><span class="sc scd">✓ Pharmacy</span><span class="sc scp">Awaiting pharmacist</span><button class="btn btsm bta" onclick="toast('Reminder SMS sent')">Send reminder</button></div>
+    </div>
+    <div class="cr pending si" data-s="pending">
+      <div><div style="font-size:14px;font-weight:500;">#SH-048 — Guardian Pharmacy Mississauga</div><div style="font-size:12px;color:var(--t2);">Jun 8, 9:00 AM–5:00 PM · Unassigned</div></div>
+      <div class="csteps"><span class="sc scw">— Pharmacy</span><span class="sc scw">— Pharmacist</span><button class="btn btsm bts">Assign</button></div>
+    </div>
+    <div class="cr locked si" data-s="locked">
+      <div><div style="font-size:14px;font-weight:500;">#SH-039 — Rexall Eglinton</div><div style="font-size:12px;color:var(--t2);">Jun 9, 10:00 AM–6:00 PM · Nadia Hassan, RPh</div></div>
+      <div class="csteps"><span class="sc scd">✓ Pharmacy</span><span class="sc scd">✓ Pharmacist</span><span class="badge bg">Locked</span></div>
+    </div>
+    <div class="cr locked si" data-s="locked">
+      <div><div style="font-size:14px;font-weight:500;">#SH-040 — Pharmasave Bloor West</div><div style="font-size:12px;color:var(--t2);">Jun 10, 9:00 AM–5:00 PM · Sara Ahmed, RPh</div></div>
+      <div class="csteps"><span class="sc scd">✓ Pharmacy</span><span class="sc scd">✓ Pharmacist</span><span class="badge bg">Locked</span></div>
+    </div>
+  </div>
+  <!-- New Shift Modal -->
+  <div class="mo" id="nsm" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+      <div class="mt">Create New Shift</div>
+      <div class="fr"><div class="fg"><label class="fl">Pharmacy</label><select><option>Acacia Pharmacy</option><option>Rexall Lawrence</option><option>Shoppers Yonge</option></select></div><div class="fg"><label class="fl">Date</label><input type="text" placeholder="Jun 12, 2026"></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Start Time</label><select><option>8:00 AM</option><option>9:00 AM</option><option>10:00 AM</option></select></div><div class="fg"><label class="fl">End Time</label><select><option>4:00 PM</option><option>5:00 PM</option><option>6:00 PM</option></select></div></div>
+      <div class="fg"><label class="fl">Assign Pharmacist</label><select><option>— Search pharmacists —</option><option>Amira Soliman, RPh</option><option>Dina Khalil, RPh</option><option>Nadia Hassan, RPh</option></select></div>
+      <div class="fg"><label class="fl">Hourly Rate ($)</label><input type="text" placeholder="55.00"></div>
+      <div class="ma"><button class="btn bts" onclick="document.getElementById('nsm').classList.remove('open')">Cancel</button><button class="btn btp" onclick="document.getElementById('nsm').classList.remove('open');toast('Shift created. Confirmations sent to both parties.')">Create & Send Confirmations</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- DISPATCH -->
+<div class="page" id="page-dispatch" style="position:relative;">
+  <div class="alert alr mb20" style="font-size:14px;">
+    <span style="font-size:18px;">🚨</span>
+    <div><div style="font-weight:600;">No-show Alert — Shift #SH-041</div><div style="font-size:12px;margin-top:3px;">Rexall Lawrence Ave · Jun 6, 9 AM. Youssef Nour did not confirm departure. GPS stationary. Auto-replacement initiated 8:12 AM.</div></div>
+  </div>
+  <div class="g2 mb20" style="gap:16px;">
+    <div class="card">
+      <div class="stitle">📞 Replacement Call List</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:14px;">Ranked by proximity. Auto-SMS sent to top 3.</div>
+      <table><thead><tr><th>#</th><th>Pharmacist</th><th>Distance</th><th>SMS</th><th>Action</th></tr></thead><tbody>
+        <tr><td style="font-family:'DM Mono',monospace;">1</td><td><div style="font-size:13px;font-weight:500;">Amira Soliman</div><div style="font-size:11px;color:var(--t3);">OCP #123456 · Available</div></td><td>3.2 km</td><td><span class="badge bg">Replied</span></td><td><button class="btn btsm btp" id="assign-btn" onclick="confirmReplacement()">Assign</button></td></tr>
+        <tr><td style="font-family:'DM Mono',monospace;">2</td><td><div style="font-size:13px;font-weight:500;">Nadia Hassan</div><div style="font-size:11px;color:var(--t3);">OCP #234567 · Available</div></td><td>5.8 km</td><td><span class="badge ba">Pending</span></td><td><button class="btn btsm bts">Call</button></td></tr>
+        <tr><td style="font-family:'DM Mono',monospace;">3</td><td><div style="font-size:13px;font-weight:500;">Sara Ahmed</div><div style="font-size:11px;color:var(--t3);">OCP #345678 · Available</div></td><td>7.1 km</td><td><span class="badge bgr">Sent</span></td><td><button class="btn btsm bts">Call</button></td></tr>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="stitle">📋 Resolution Log</div>
+      <div class="tl">
+        <div class="tli"><div class="tld tlr"></div><div class="tlt">8:07 AM</div><div class="tltx">No-show detected. GPS shows Youssef Nour stationary.</div></div>
+        <div class="tli"><div class="tld tla"></div><div class="tlt">8:09 AM</div><div class="tltx">Pharmacy (Rexall Lawrence) notified via push notification.</div></div>
+        <div class="tli"><div class="tld tla"></div><div class="tlt">8:12 AM</div><div class="tltx">Replacement search initiated. SMS sent to top 3 pharmacists.</div></div>
+        <div class="tli"><div class="tld tlg"></div><div class="tlt">8:24 AM</div><div class="tltx">Amira Soliman confirmed via SMS. Awaiting admin assignment.</div></div>
+        <div class="tli"><div class="tld tlgr"></div><div class="tlt">Now</div><div class="tltx">Pending final assignment. ETA to pharmacy: ~18 min.</div></div>
+      </div>
+      <div style="margin-top:12px;"><div class="fg"><label class="fl">Add resolution note</label><textarea rows="2" placeholder="e.g. Youssef contacted — family emergency, excused."></textarea></div><button class="btn bts btsm" onclick="toast('Note saved to resolution log')">Save Note</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stitle">🗂 No-show History (90 Days)</div>
+    <table><thead><tr><th>Shift</th><th>Pharmacist</th><th>Pharmacy</th><th>Date</th><th>Reason</th><th>Resolved In</th><th>Outcome</th></tr></thead><tbody>
+      <tr><td>#SH-041</td><td>Youssef Nour</td><td>Rexall Lawrence</td><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 6, 2026</td><td><span class="badge ba">Pending</span></td><td>—</td><td>In progress</td></tr>
+      <tr><td>#SH-022</td><td>Khalid Omar</td><td>Shoppers Danforth</td><td style="font-family:'DM Mono',monospace;font-size:11px;">May 14, 2026</td><td>Personal emergency</td><td>31 min</td><td>Replaced · Warning issued</td></tr>
+      <tr><td>#SH-011</td><td>Anonymous</td><td>Guardian Etobicoke</td><td style="font-family:'DM Mono',monospace;font-size:11px;">Apr 3, 2026</td><td>No response</td><td>48 min</td><td>Blacklisted</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- JOB POSTINGS -->
+<div class="page" id="page-jobs" style="position:relative;">
+  <div class="fb mb20">
+    <div style="font-size:13px;color:var(--t2);">ADP-style module. Training compliance enforced. Contracts digital.</div>
+    <button class="btn btp" onclick="document.getElementById('njm').classList.add('open')">+ New Posting</button>
+  </div>
+  <div class="pc">
+    <div class="ph">
+      <div><div class="pt">Staff Pharmacist — Full Time</div><div class="pl">Acacia Pharmacy · 2195 Dundas St W, Toronto</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><span class="badge bg">Active</span><span class="badge bb">12 applicants</span><span class="badge bgr">Posted Jun 1</span></div></div>
+      <div style="text-align:right;"><div style="font-size:18px;font-weight:600;">$52–58/hr</div><div style="font-size:12px;color:var(--t3);">Full Time</div></div>
+    </div>
+    <div class="pb">
+      <div class="lbl mb8">Required Compliance Documents</div>
+      <div style="flex-wrap:wrap;display:flex;"><span class="dc">OCP Certificate</span><span class="dc">Injection Cert</span><span class="dc">WHMIS 2015</span><span class="dc">CPR Level C</span><span class="dc">Minor Ailments</span><span class="dc" style="opacity:0.5;">Police Check (opt.)</span></div>
+      <div class="fb mt16"><div style="font-size:12px;color:var(--t2);">Contract: <strong>PharmRelief Standard Employment v2.1</strong></div><div style="display:flex;gap:8px;"><button class="btn btsm bts">View Applicants</button><button class="btn btsm btp">Manage</button></div></div>
+    </div>
+  </div>
+  <div class="pc">
+    <div class="ph">
+      <div><div class="pt">Relief Pharmacist — PRN / As Needed</div><div class="pl">Shoppers Drug Mart Yonge · Toronto, ON</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><span class="badge bg">Active</span><span class="badge bb">7 applicants</span><span class="badge bgr">Posted May 28</span></div></div>
+      <div style="text-align:right;"><div style="font-size:18px;font-weight:600;">$55–62/hr</div><div style="font-size:12px;color:var(--t3);">Casual / PRN</div></div>
+    </div>
+    <div class="pb">
+      <div class="lbl mb8">Required Compliance Documents</div>
+      <div style="flex-wrap:wrap;display:flex;"><span class="dc">OCP Certificate</span><span class="dc">Injection Cert</span><span class="dc">WHMIS 2015</span><span class="dc">CPR Level C</span></div>
+      <div class="fb mt16"><div style="font-size:12px;color:var(--t2);">Contract: <strong>PharmRelief Relief Agreement v1.4</strong></div><div style="display:flex;gap:8px;"><button class="btn btsm bts">View Applicants</button><button class="btn btsm btp">Manage</button></div></div>
+    </div>
+  </div>
+  <div class="mo" id="njm" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+      <div class="mt">New Job Posting</div>
+      <div class="fg"><label class="fl">Position Title</label><input type="text" placeholder="e.g. Staff Pharmacist – Full Time"></div>
+      <div class="fr"><div class="fg"><label class="fl">Pharmacy</label><select><option>Acacia Pharmacy</option><option>Rexall Lawrence</option></select></div><div class="fg"><label class="fl">Type</label><select><option>Full Time</option><option>Part Time</option><option>Casual / PRN</option></select></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Min $/hr</label><input type="text" placeholder="52"></div><div class="fg"><label class="fl">Max $/hr</label><input type="text" placeholder="58"></div></div>
+      <div class="fg"><label class="fl">Required Compliance Docs</label>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">OCP Certificate (mandatory)</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">Injection Certificate</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">WHMIS 2015</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">CPR Level C</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb"></div><span class="clf">Minor Ailments Training</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb"></div><span class="clf">Police Background Check</span></div>
+      </div>
+      <div class="ma"><button class="btn bts" onclick="document.getElementById('njm').classList.remove('open')">Cancel</button><button class="btn btp" onclick="document.getElementById('njm').classList.remove('open');toast('Job posting published')">Publish Posting</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- CANDIDATES -->
+<div class="page" id="page-candidates" style="position:relative;">
+  <div class="tabs">
+    <div class="tab active" onclick="cTab('all',this)">All Candidates</div>
+    <div class="tab" onclick="cTab('bl',this)">Blacklist</div>
+  </div>
+  <div id="ca">
+    <div class="card mb16">
+      <div class="stitle">Active Candidate Pool</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:14px;">Compliance stats auto-tracked. Shared only with PharmRelief Operations — not visible to pharmacies or third parties.</div>
+      <div class="can-row"><div class="cav" style="background:var(--g50);color:var(--g800);">AS</div><div style="flex:1;"><div style="font-size:13px;font-weight:500;">Amira Soliman, RPh</div><div style="font-size:11px;color:var(--t3);">OCP #123456 · GTA North</div></div><div class="cbar"><div class="fb"><span class="lbl">Compliance</span><span class="cpct" style="color:var(--g800);">98%</span></div><div class="ctrack"><div class="cfill" style="width:98%;background:var(--g200);"></div></div><div style="font-size:10px;color:var(--t3);margin-top:2px;">42 shifts · 0 no-shows · 4.9★</div></div><span class="badge bg" style="margin-left:12px;">Active</span></div>
+      <div class="can-row"><div class="cav" style="background:var(--b50);color:var(--b800);">DK</div><div style="flex:1;"><div style="font-size:13px;font-weight:500;">Dina Khalil, RPh</div><div style="font-size:11px;color:var(--t3);">OCP #234567 · Downtown</div></div><div class="cbar"><div class="fb"><span class="lbl">Compliance</span><span class="cpct" style="color:var(--g800);">95%</span></div><div class="ctrack"><div class="cfill" style="width:95%;background:var(--g200);"></div></div><div style="font-size:10px;color:var(--t3);margin-top:2px;">28 shifts · 1 no-show · 4.7★</div></div><span class="badge bg" style="margin-left:12px;">Active</span></div>
+      <div class="can-row"><div class="cav" style="background:var(--a50);color:var(--a600);">YN</div><div style="flex:1;"><div style="font-size:13px;font-weight:500;">Youssef Nour, RPh</div><div style="font-size:11px;color:var(--t3);">OCP #456789 · GTA East</div></div><div class="cbar"><div class="fb"><span class="lbl">Compliance</span><span class="cpct" style="color:var(--a600);">72%</span></div><div class="ctrack"><div class="cfill" style="width:72%;background:var(--a400);"></div></div><div style="font-size:10px;color:var(--t3);margin-top:2px;">18 shifts · 2 no-shows · 3.8★</div></div><span class="badge ba" style="margin-left:12px;">Warning</span></div>
+      <div class="can-row"><div class="cav" style="background:var(--g50);color:var(--g800);">NH</div><div style="flex:1;"><div style="font-size:13px;font-weight:500;">Nadia Hassan, RPh</div><div style="font-size:11px;color:var(--t3);">OCP #567890 · GTA West</div></div><div class="cbar"><div class="fb"><span class="lbl">Compliance</span><span class="cpct" style="color:var(--g800);">100%</span></div><div class="ctrack"><div class="cfill" style="width:100%;background:var(--g200);"></div></div><div style="font-size:10px;color:var(--t3);margin-top:2px;">35 shifts · 0 no-shows · 5.0★</div></div><span class="badge bg" style="margin-left:12px;">Active</span></div>
+    </div>
+  </div>
+  <div id="cbl" style="display:none;">
+    <div class="alert alr mb16">Blacklisted candidates are flagged network-wide — cannot be rehired by any pharmacy on PharmRelief.</div>
+    <div class="blrow"><div class="cav" style="background:var(--r50);color:var(--r600);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;">KO</div><div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--r600);">Khalid Omar, RPh</div><div style="font-size:11px;color:var(--t3);">OCP #999001 · Blacklisted May 20, 2026</div><div style="font-size:11px;color:var(--r600);margin-top:3px;">Reason: Contract breach — 2 no-shows, unresponsive to dispatch</div></div><button class="btn btsm btd">View Record</button></div>
+    <div class="blrow"><div class="cav" style="background:var(--r50);color:var(--r600);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;">??</div><div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--r600);">Anonymous (Unregistered)</div><div style="font-size:11px;color:var(--t3);">Guardian Etobicoke · Flagged Apr 3, 2026</div><div style="font-size:11px;color:var(--r600);margin-top:3px;">Reason: No-show, no response, OCP number unverifiable</div></div><button class="btn btsm btd">View Record</button></div>
+  </div>
+</div>
+
+<!-- MILEAGE -->
+<div class="page" id="page-mileage" style="position:relative;">
+  <div class="g2 mb20" style="gap:16px;">
+    <div class="mcard">
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">Total mileage this month</div>
+      <div class="mnum">1,847</div>
+      <div class="mlbl">km · GPS verified · June 2026</div>
+      <div style="margin-top:14px;font-size:12px;color:rgba(255,255,255,0.6);">Reimbursable at $0.70/km = <span style="color:var(--g100);font-weight:500;">$1,292.90</span></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Mileage by Pharmacist</div>
+      <table><thead><tr><th>Pharmacist</th><th>Shifts</th><th>km</th><th>Reimbursable</th><th>GPS</th></tr></thead><tbody>
+        <tr><td>Amira Soliman</td><td>8</td><td>412</td><td>$288.40</td><td><span class="badge bg">Verified</span></td></tr>
+        <tr><td>Dina Khalil</td><td>6</td><td>338</td><td>$236.60</td><td><span class="badge bg">Verified</span></td></tr>
+        <tr><td>Nadia Hassan</td><td>7</td><td>501</td><td>$350.70</td><td><span class="badge bg">Verified</span></td></tr>
+        <tr><td>Sara Ahmed</td><td>5</td><td>596</td><td>$417.20</td><td><span class="badge bg">Verified</span></td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="card mb20">
+    <div class="stitle">GPS Shift Tracking — Session Log</div>
+    <table><thead><tr><th>Date</th><th>Pharmacist</th><th>Origin</th><th>Destination</th><th>Departure</th><th>Arrival</th><th>km</th><th>Status</th></tr></thead><tbody>
+      <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 6</td><td>Amira Soliman</td><td>North York</td><td>Acacia Pharm.</td><td style="font-family:'DM Mono',monospace;font-size:11px;">8:31 AM</td><td style="font-family:'DM Mono',monospace;font-size:11px;">9:02 AM</td><td>14.2 km</td><td><span class="badge bg">Verified</span></td></tr>
+      <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 5</td><td>Dina Khalil</td><td>Etobicoke</td><td>Shoppers Yonge</td><td style="font-family:'DM Mono',monospace;font-size:11px;">8:04 AM</td><td style="font-family:'DM Mono',monospace;font-size:11px;">8:49 AM</td><td>22.1 km</td><td><span class="badge bg">Verified</span></td></tr>
+      <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">Jun 6</td><td>Youssef Nour</td><td>Scarborough</td><td>Rexall Lawrence</td><td>—</td><td>—</td><td>—</td><td><span class="badge br">No-show</span></td></tr>
+    </tbody></table>
+  </div>
+  <div class="card">
+    <div class="stitle">Export Mileage Report</div>
+    <div class="eo"><div><div class="ef">QuickBooks (.iif)</div><div class="ed">Directly importable into QuickBooks Desktop and Online</div></div><button class="btn btp btsm" onclick="toast('Exporting to QuickBooks...')">Export</button></div>
+    <div class="eo"><div><div class="ef">CSV — Standard</div><div class="ed">All entries, GPS-verified, date range selectable</div></div><button class="btn bts btsm" onclick="toast('Exporting CSV...')">Export</button></div>
+    <div class="eo"><div><div class="ef">PDF Report</div><div class="ed">Formatted for tax records / CRA compliance</div></div><button class="btn bts btsm" onclick="toast('Exporting PDF...')">Export</button></div>
+    <div class="eo"><div><div class="ef">Excel (.xlsx)</div><div class="ed">Full spreadsheet with formulas for manual adjustments</div></div><button class="btn bts btsm" onclick="toast('Exporting Excel...')">Export</button></div>
+  </div>
+</div>
+
+<!-- FINANCIALS -->
+<div class="page" id="page-financials" style="position:relative;">
+  <div class="g4 mb20">
+    <div class="mc"><div class="lbl">Revenue (Jun)</div><div class="val" style="font-size:22px;">$18,240</div><div class="du">↑ 12% vs May</div></div>
+    <div class="mc"><div class="lbl">Payroll (Jun)</div><div class="val" style="font-size:22px;">$12,880</div><div class="sub">Pharmacist pay</div></div>
+    <div class="mc"><div class="lbl">Mileage Reimb.</div><div class="val" style="font-size:22px;">$1,292</div><div class="sub">GPS verified</div></div>
+    <div class="mc"><div class="lbl">Net (Jun est.)</div><div class="val" style="font-size:22px;color:var(--g800);">$4,068</div><div class="du">22.3% margin</div></div>
+  </div>
+  <div class="card mb16">
+    <div class="stitle">Invoice Register — June 2026</div>
+    <table><thead><tr><th>Invoice #</th><th>Pharmacy</th><th>Shifts</th><th>Hours</th><th>Amount</th><th>Status</th><th>Export</th></tr></thead><tbody>
+      <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">INV-2026-041</td><td>Acacia Pharmacy</td><td>4</td><td>32h</td><td style="font-weight:500;">$1,856</td><td><span class="badge bg">Paid</span></td><td><button class="btn btsm bts" onclick="toast('Exporting to QuickBooks...')">QB</button></td></tr>
+      <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">INV-2026-042</td><td>Rexall Lawrence</td><td>3</td><td>24h</td><td style="font-weight:500;">$1,440</td><td><span class="badge ba">Pending</span></td><td><button class="btn btsm bts" onclick="toast('Exporting to QuickBooks...')">QB</button></td></tr>
+      <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">INV-2026-043</td><td>Shoppers Yonge</td><td>2</td><td>16h</td><td style="font-weight:500;">$992</td><td><span class="badge ba">Pending</span></td><td><button class="btn btsm bts" onclick="toast('Exporting to QuickBooks...')">QB</button></td></tr>
+      <tr><td style="font-family:'DM Mono',monospace;font-size:11px;">INV-2026-044</td><td>Guardian Mississauga</td><td>5</td><td>40h</td><td style="font-weight:500;">$2,300</td><td><span class="badge bg">Paid</span></td><td><button class="btn btsm bts" onclick="toast('Exporting to QuickBooks...')">QB</button></td></tr>
+    </tbody></table>
+  </div>
+  <div class="card">
+    <div class="stitle">Export Financials</div>
+    <div class="fr mb16"><div class="fg"><label class="fl">Date Range</label><select><option>June 2026</option><option>May 2026</option><option>Q2 2026</option><option>Year to Date</option></select></div><div class="fg"><label class="fl">Report Type</label><select><option>Full Financial Report</option><option>Payroll Only</option><option>Invoices Only</option><option>Mileage Only</option></select></div></div>
+    <div class="eo"><div><div class="ef">QuickBooks Online / Desktop (.iif)</div><div class="ed">Payroll, invoices, and mileage — all included</div></div><button class="btn btp btsm" onclick="toast('Exporting full report to QuickBooks...')">Export to QuickBooks</button></div>
+    <div class="eo"><div><div class="ef">CSV — All Records</div><div class="ed">Payroll + invoices + mileage in one spreadsheet</div></div><button class="btn bts btsm" onclick="toast('Exporting CSV...')">Export CSV</button></div>
+    <div class="eo"><div><div class="ef">PDF Financial Report</div><div class="ed">Formatted with summary, line items, totals</div></div><button class="btn bts btsm" onclick="toast('Exporting PDF...')">Export PDF</button></div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="page" id="page-notifications" style="position:relative;">
+  <div class="g2 mb20" style="gap:16px;">
+    <div class="card">
+      <div class="stitle">SMS Templates — Auto-Triggered</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">Fires at T-2h, T-1h, and on GPS geofence arrival.</div>
+      <div class="lbl mb8">T-2 Hours Before Shift</div>
+      <div class="sms">Hi Amira! Your shift at Acacia Pharmacy starts at 9:00 AM today. Please confirm you're on your way by replying YES. — PharmRelief</div>
+      <div class="smst">Sent at 7:00 AM</div>
+      <div class="lbl mb8">No Response / Stationary Alert</div>
+      <div class="sms">Hi Amira — we noticed you haven't confirmed yet. Are you on your way to Acacia Pharmacy? Reply YES or call 1-800-PHARM-1.</div>
+      <div class="smst">Sent at 8:00 AM if no reply</div>
+      <div class="lbl mb8">Pharmacy ETA Notification</div>
+      <div class="sms" style="background:var(--b800);">Your PharmRelief pharmacist is approximately 12 minutes away. — PharmRelief Team</div>
+      <div class="smst">Sent to pharmacy at T-30 min</div>
+    </div>
+    <div class="card">
+      <div class="stitle">Notification Settings</div>
+      <div style="margin-bottom:16px;">
+        <div class="lbl mb8">Pharmacist Reminders</div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">SMS at T-2 hours</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">Push notification at T-1 hour</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">GPS movement check at T-60 min</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">No-show alert if stationary at T-30 min</span></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div class="lbl mb8">Pharmacy Notifications</div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">ETA notification (T-30 min)</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">Geofence arrival confirmation</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">No-show alert + replacement status</span></div>
+      </div>
+      <div>
+        <div class="lbl mb8">Admin Alerts</div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">No-show triggered</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">Replacement found or failed</span></div>
+        <div class="ci" onclick="toggleCheck(this)"><div class="cb checked"></div><span class="clf">Daily shift summary at 6 AM</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stitle">Recent Notification Log</div>
+    <div class="ni-item"><div class="ni-ic" style="background:var(--r50);color:var(--r600);">🚨</div><div><div class="ni-tt">No-show Alert — Youssef Nour · Shift #SH-041</div><div class="ni-bd">GPS stationary. Pharmacy notified. Replacement initiated. Top 3 pharmacists SMS'd.</div><div class="ni-tm">Today, 8:07 AM</div></div></div>
+    <div class="ni-item"><div class="ni-ic" style="background:var(--g50);color:var(--g800);">✅</div><div><div class="ni-tt">Shift Locked — Amira Soliman · Acacia Pharmacy</div><div class="ni-bd">Both pharmacy and pharmacist confirmed. Shift #SH-038 locked.</div><div class="ni-tm">Yesterday, 3:44 PM</div></div></div>
+    <div class="ni-item"><div class="ni-ic" style="background:var(--a50);color:var(--a600);">⏳</div><div><div class="ni-tt">Reminder Sent — Dina Khalil · Shift #SH-047</div><div class="ni-bd">Pharmacist confirmation reminder SMS sent. Awaiting response.</div><div class="ni-tm">Today, 7:00 AM</div></div></div>
+    <div class="ni-item"><div class="ni-ic" style="background:var(--b50);color:var(--b800);">📍</div><div><div class="ni-tt">ETA Sent — Nadia Hassan · Rexall Eglinton</div><div class="ni-bd">Pharmacy notified: pharmacist approximately 8 minutes away.</div><div class="ni-tm">Yesterday, 9:52 AM</div></div></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--g900);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;display:none;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,0.2);"></div>
+
+<script>
+const titles={dashboard:'Operations Dashboard',shifts:'Shift Management',dispatch:'Ops Dispatch',jobs:'Job Postings',candidates:'Candidates',mileage:'Mileage Tracker',financials:'Financials',notifications:'Notifications'};
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tbt').textContent=titles[id]||id;
+}
+function fShifts(s,tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('.si').forEach(i=>{i.style.display=(s==='all'||i.dataset.s===s)?'flex':'none';});
+}
+function cTab(t,el){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ca').style.display=t==='all'?'block':'none';
+  document.getElementById('cbl').style.display=t==='bl'?'block':'none';
+}
+function toggleCheck(item){item.querySelector('.cb').classList.toggle('checked');}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent='✓ '+msg;t.style.display='block';
+  setTimeout(()=>{t.style.display='none';},2800);
+}
+function confirmReplacement(){
+  const b=document.getElementById('assign-btn');
+  if(b){b.textContent='Assigned';b.disabled=true;b.style.opacity='0.6';}
+  toast('Amira Soliman assigned to Shift #SH-041. Double-confirm sent.');
+}
+</script>
+</main>
+</body>
+</html>
