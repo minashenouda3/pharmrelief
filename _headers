@@ -1,0 +1,12 @@
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+
+/pharmrelief_phase3.html
+  Basic-Auth: pharmrelief:testing
+
+/dashboard/*
+  Basic-Auth: pharmrelief:testing
+
+/app/*
+  Basic-Auth: pharmrelief:testing
