@@ -1,827 +1,297 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>PharmRelief — OCP-verified pharmacy relief platform</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmRelief — Ontario's Pharmacy Relief Platform</title>
+<meta name="description" content="Connecting OCP-verified pharmacists with relief shifts across Ontario. Faster, simpler, and fully compliant.">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --g:#1D9E75;--gd:#0F6E56;--gx:#04342C;--gl:#E1F5EE;--gm:#5DCAA5;
-  --b:#185FA5;--bl:#E6F1FB;--bd:#0C447C;
-  --a:#BA7517;--al:#FAEEDA;
-  --r:#A32D2D;--rl:#FCEBEB;
-  --v:#534AB7;--vl:#EEEDFE;--vd:#3C3489;
-  --bg:#F5F4F1;--surf:#fff;--bdr:rgba(0,0,0,.09);
-  --text:#1A1A1A;--muted:#6B6B6B;
-}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #0F6E56;
+    --teal-light: #E1F5EE;
+    --teal-mid: #1D9E75;
+    --teal-dark: #085041;
+    --slate: #1a2332;
+    --slate-mid: #2d3f55;
+    --text-muted: #6b7a8d;
+    --border: rgba(15,110,86,0.15);
+    --bg: #f8faf9;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--slate); line-height: 1.6; overflow-x: hidden; }
 
-/* Layout */
-.app{display:grid;grid-template-rows:auto auto 1fr;min-height:100vh}
-.topbar{background:var(--gx);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
-.logo{color:#E1F5EE;font-family:'Fraunces',serif;font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px}
-.logo i{color:var(--gm);font-size:20px}
-.topbar-right{display:flex;gap:8px;align-items:center}
-.mode-btn{font-size:11px;padding:5px 12px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;font-weight:500;transition:all .2s}
-.mode-btn.active{background:var(--g);color:#fff}
-.mode-btn:not(.active){background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 2.5rem;
+    background: rgba(248,250,249,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--teal-dark); text-decoration: none; letter-spacing: -0.02em; }
+  .nav-logo span { color: var(--teal-mid); font-style: italic; }
+  .nav-pill { background: var(--teal); color: #fff; border: none; padding: 0.5rem 1.2rem; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+  .nav-pill:hover { background: var(--teal-dark); }
 
-/* Navigation */
-.nav{background:var(--surf);border-bottom:0.5px solid var(--bdr);display:flex;gap:2px;padding:7px 14px;overflow-x:auto;position:sticky;top:44px;z-index:199}
-.nb{font-size:12px;padding:6px 13px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;border:none;font-family:inherit;background:transparent;color:var(--muted);font-weight:400;transition:all .15s}
-.nb i{font-size:13px}
-.nb.active{background:var(--gl);color:var(--gd);font-weight:500}
-.notif{width:6px;height:6px;background:#E24B4A;border-radius:50%;display:inline-block;margin-left:2px}
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 7rem 2rem 4rem; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -120px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(ellipse, rgba(29,158,117,0.09) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--teal-light); color: var(--teal-dark); border: 1px solid rgba(15,110,86,0.2); border-radius: 100px; padding: 0.35rem 1rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 2rem; }
+  .hero-badge::before { content: ''; width: 6px; height: 6px; background: var(--teal-mid); border-radius: 50%; display: inline-block; }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2.6rem, 6vw, 4.2rem); line-height: 1.1; letter-spacing: -0.03em; color: var(--slate); max-width: 720px; margin-bottom: 1.4rem; }
+  .hero h1 em { font-style: italic; color: var(--teal); }
+  .hero p { font-size: 1.15rem; color: var(--text-muted); max-width: 520px; margin: 0 auto 2.8rem; font-weight: 300; line-height: 1.75; }
 
-/* Main content */
-.main{padding:18px 20px;max-width:980px;margin:0 auto}
-.panel{display:none}.panel.active{display:block}
+  .waitlist-form { display: flex; gap: 0.75rem; max-width: 460px; width: 100%; margin: 0 auto 1.2rem; flex-wrap: wrap; justify-content: center; }
+  .waitlist-form input { flex: 1; min-width: 220px; padding: 0.85rem 1.2rem; border: 1.5px solid var(--border); border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; background: #fff; color: var(--slate); outline: none; transition: border 0.2s; }
+  .waitlist-form input::placeholder { color: #aab4be; }
+  .waitlist-form input:focus { border-color: var(--teal-mid); }
+  .waitlist-form button { background: var(--teal); color: #fff; border: none; padding: 0.85rem 1.6rem; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background 0.2s, transform 0.1s; }
+  .waitlist-form button:hover { background: var(--teal-dark); }
+  .waitlist-form button:active { transform: scale(0.97); }
+  .waitlist-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .form-note { font-size: 0.78rem; color: var(--text-muted); }
+  .success-msg { display: none; background: var(--teal-light); color: var(--teal-dark); border: 1px solid rgba(15,110,86,0.2); border-radius: 12px; padding: 0.75rem 1.4rem; font-size: 0.9rem; font-weight: 500; max-width: 420px; margin: 0 auto; }
 
-/* Typography */
-.h2{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--text);margin-bottom:4px}
-.sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+  .trust-bar { background: #fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1.4rem 2rem; display: flex; align-items: center; justify-content: center; gap: 3rem; flex-wrap: wrap; }
+  .trust-item { display: flex; align-items: center; gap: 0.55rem; font-size: 0.82rem; font-weight: 500; color: var(--slate-mid); }
+  .trust-dot { width: 8px; height: 8px; background: var(--teal-mid); border-radius: 50%; flex-shrink: 0; }
 
-/* Cards & metrics */
-.card{background:var(--surf);border:0.5px solid var(--bdr);border-radius:12px;padding:15px}
-.metric{background:var(--bg);border-radius:8px;padding:12px 14px}
-.ml{font-size:11px;color:var(--muted);margin-bottom:4px;display:flex;align-items:center;gap:4px}
-.mv{font-size:21px;font-weight:500;color:var(--text)}
-.ms{font-size:11px;margin-top:2px}
+  section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+  .section-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.75rem; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 3.5vw, 2.8rem); letter-spacing: -0.02em; line-height: 1.15; color: var(--slate); max-width: 560px; margin-bottom: 1rem; }
+  .section-subtitle { font-size: 1.05rem; color: var(--text-muted); max-width: 480px; font-weight: 300; line-height: 1.7; margin-bottom: 3rem; }
 
-/* Grids */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px}
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+  .feature-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 1.8rem; transition: border-color 0.2s, transform 0.2s; }
+  .feature-card:hover { border-color: var(--teal-mid); transform: translateY(-2px); }
+  .feature-icon { width: 44px; height: 44px; background: var(--teal-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.1rem; }
+  .feature-icon svg { width: 22px; height: 22px; stroke: var(--teal); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .feature-card h3 { font-size: 1rem; font-weight: 600; color: var(--slate); margin-bottom: 0.5rem; }
+  .feature-card p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; }
 
-/* Pills */
-.pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:500;white-space:nowrap;display:inline-block}
-.pg{background:var(--gl);color:#085041}.pa{background:var(--al);color:#633806}
-.pb{background:var(--bl);color:var(--bd)}.pv{background:var(--vl);color:var(--vd)}
-.pr{background:var(--rl);color:#791F1F}
+  .how-bg { background: var(--slate); margin: 0; padding: 5rem 2rem; }
+  .how-inner { max-width: 1100px; margin: 0 auto; }
+  .how-bg .section-label { color: var(--teal-mid); }
+  .how-bg .section-title { color: #fff; }
+  .how-bg .section-subtitle { color: rgba(255,255,255,0.55); }
+  .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem; }
+  .step-num { font-family: 'DM Serif Display', serif; font-size: 3.5rem; color: rgba(29,158,117,0.25); line-height: 1; margin-bottom: 0.8rem; }
+  .step h4 { font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem; }
+  .step p { font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.65; }
 
-/* Row items */
-.row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:0.5px solid var(--bdr)}
-.row:last-child{border-bottom:none}
+  .who-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+  .who-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 2rem; }
+  .who-tag { display: inline-block; background: var(--teal-light); color: var(--teal-dark); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.3rem 0.8rem; border-radius: 100px; margin-bottom: 1rem; }
+  .who-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--slate); margin-bottom: 0.75rem; }
+  .who-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+  .who-list li { font-size: 0.875rem; color: var(--text-muted); display: flex; align-items: flex-start; gap: 0.5rem; }
+  .who-list li::before { content: '→'; color: var(--teal-mid); font-weight: 500; flex-shrink: 0; margin-top: 1px; }
 
-/* Avatar */
-.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
-.av-sq{border-radius:8px}
+  .cta-section { background: linear-gradient(135deg, var(--teal-dark) 0%, var(--teal) 100%); padding: 5rem 2rem; text-align: center; margin: 0; }
+  .cta-section h2 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 4vw, 3rem); color: #fff; letter-spacing: -0.02em; margin-bottom: 1rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .cta-section p { color: rgba(255,255,255,0.7); font-size: 1rem; margin-bottom: 2.5rem; max-width: 420px; margin-left: auto; margin-right: auto; font-weight: 300; }
+  .cta-form { display: flex; gap: 0.75rem; max-width: 420px; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
+  .cta-form input { flex: 1; min-width: 200px; padding: 0.85rem 1.2rem; border: 1.5px solid rgba(255,255,255,0.25); border-radius: 100px; background: rgba(255,255,255,0.12); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border 0.2s; }
+  .cta-form input::placeholder { color: rgba(255,255,255,0.5); }
+  .cta-form input:focus { border-color: rgba(255,255,255,0.6); }
+  .cta-form button { background: #fff; color: var(--teal-dark); border: none; padding: 0.85rem 1.6rem; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+  .cta-form button:hover { opacity: 0.9; }
+  .cta-form button:active { transform: scale(0.97); }
+  .cta-form button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Tags */
-.tag{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--bg);color:var(--muted);border:0.5px solid var(--bdr)}
-.vbadge{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--gl);color:#085041;font-weight:500;display:inline-flex;align-items:center;gap:3px}
+  footer { background: var(--slate); padding: 2.5rem 2.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .footer-logo { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .footer-logo span { color: var(--teal-mid); font-style: italic; }
+  .footer-text { font-size: 0.78rem; color: rgba(255,255,255,0.35); }
+  .footer-ocp { font-size: 0.75rem; color: rgba(255,255,255,0.35); display: flex; align-items: center; gap: 0.4rem; }
+  .ocp-dot { width: 5px; height: 5px; background: var(--teal-mid); border-radius: 50%; }
 
-/* Buttons */
-.btn{font-size:11px;padding:5px 13px;border-radius:8px;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted);border:0.5px solid var(--bdr);font-weight:500;transition:all .15s}
-.btn:hover{background:var(--bg)}
-.btn-p{font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;background:var(--g);color:#fff;border:none;font-weight:500}
-.btn-p:hover{background:var(--gd)}
-.btn-b{font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;background:var(--b);color:#fff;border:none;font-weight:500}
-
-/* Form elements */
-.inp{font-family:inherit;font-size:12px;color:var(--text);padding:7px 11px;border:0.5px solid var(--bdr);border-radius:8px;background:var(--bg);width:100%;outline:none}
-.inp:focus{border-color:var(--g)}
-
-/* Search */
-.search{display:flex;align-items:center;gap:7px;background:var(--surf);border:0.5px solid var(--bdr);border-radius:8px;padding:6px 11px;flex:1;max-width:300px}
-.search i{font-size:13px;color:var(--muted)}
-.search input{border:none;background:transparent;font-family:inherit;font-size:12px;color:var(--text);outline:none;width:100%}
-
-/* Chips */
-.chip{font-size:11px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--bdr);background:var(--surf);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s}
-.chip.on{background:var(--gl);color:var(--gd);border-color:var(--g)}
-.frow{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-
-/* Table */
-table{width:100%;font-size:11px;border-collapse:collapse}
-th{text-align:left;padding:8px 9px;font-weight:500;color:var(--muted);border-bottom:0.5px solid var(--bdr);background:var(--bg)}
-td{padding:7px 9px;border-bottom:0.5px solid var(--bdr);color:var(--text)}
-tr:hover td{background:var(--bg)}
-
-/* Bar */
-.bar{height:5px;border-radius:3px;background:var(--bg)}
-.bf{height:5px;border-radius:3px}
-
-/* Booking steps */
-.step-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
-
-/* Calendar */
-.cal-cell{border-radius:8px;padding:4px 3px;min-height:50px;border:0.5px solid var(--bdr);background:var(--surf);cursor:pointer;transition:border-color .15s}
-.cal-cell:hover{border-color:var(--g)}
-.cal-cell.has{background:#F0FAF5}
-.cal-cell.today{border:1.5px solid var(--b)}
-.cal-cell.sel{border:1.5px solid var(--g);background:var(--gl)}
-.cal-num{font-size:11px;text-align:center;margin-bottom:2px;font-weight:500}
-.cal-dot{font-size:7px;color:#fff;padding:1px 3px;border-radius:3px;margin-bottom:1px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;display:none;align-items:center;gap:8px;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.toast.show{display:flex}
-
-/* Message bubbles */
-.bubble{max-width:76%;border-radius:12px;padding:9px 13px;font-size:13px;line-height:1.5}
-.bubble-in{background:var(--surf);border:0.5px solid var(--bdr)}
-.bubble-out{background:var(--g);color:#fff}
-
-/* Agent portal special */
-.agent-card{border:0.5px solid var(--bdr);border-radius:12px;overflow:hidden}
-.agent-hdr{padding:12px 14px;color:#fff}
-
-/* Hosting guide */
-.step-card{background:var(--surf);border-radius:12px;padding:16px;margin-bottom:10px;border-left:3px solid var(--g)}
-.code-block{font-family:'Courier New',monospace;font-size:11px;background:#1A1A1A;color:#5DCAA5;border-radius:8px;padding:12px 14px;overflow-x:auto;white-space:pre;margin:8px 0}
-.url-chip{font-family:'Courier New',monospace;font-size:11px;background:var(--gl);color:#085041;padding:3px 10px;border-radius:6px;display:inline-block}
+  @media (max-width: 600px) {
+    nav { padding: 1rem 1.2rem; }
+    .trust-bar { gap: 1.2rem; }
+    footer { flex-direction: column; align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
-<div class="app">
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div class="logo"><i class="ti ti-pill" aria-hidden="true"></i>PharmRelief
-    <span style="font-size:10px;background:rgba(255,255,255,.1);color:var(--gm);padding:2px 9px;border-radius:20px;margin-left:4px">OCP-verified</span>
+<nav>
+  <a class="nav-logo" href="#">Pharm<span>Relief</span></a>
+  <a class="nav-pill" href="#waitlist">Join Waitlist</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">Now in Development · Ontario, Canada</div>
+  <h1>Ontario's smarter<br><em>pharmacy relief</em><br>platform</h1>
+  <p>Connecting OCP-verified pharmacists with relief shifts — faster, simpler, and fully compliant with Ontario pharmacy standards.</p>
+
+  <div class="waitlist-form" id="hero-form">
+    <input type="email" id="hero-email" placeholder="Enter your email address" />
+    <button id="hero-btn" onclick="handleSignup('hero')">Get Early Access</button>
   </div>
-  <div class="topbar-right">
-    <button class="mode-btn active" onclick="setMode('agency',this)">Agency</button>
-    <button class="mode-btn" onclick="setMode('pharmacy',this)">Pharmacy</button>
-    <button class="mode-btn" onclick="setMode('pharmacist',this)">Pharmacist</button>
-    <button class="mode-btn" onclick="setMode('agent',this)">Agent portal</button>
-  </div>
+  <div class="success-msg" id="hero-success">✓ You're on the list! We'll be in touch soon.</div>
+  <p class="form-note">For pharmacies and pharmacists. No spam, ever.</p>
 </div>
 
-<!-- NAV -->
-<div class="nav" id="main-nav">
-  <button class="nb active" onclick="show('dashboard',this)"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</button>
-  <button class="nb" onclick="show('pharmacists',this)"><i class="ti ti-users" aria-hidden="true"></i>Pharmacists</button>
-  <button class="nb" onclick="show('locations',this)"><i class="ti ti-building-hospital" aria-hidden="true"></i>Locations</button>
-  <button class="nb" onclick="show('booking',this)"><i class="ti ti-calendar-plus" aria-hidden="true"></i>Book shift</button>
-  <button class="nb" onclick="show('calendar',this)"><i class="ti ti-calendar-month" aria-hidden="true"></i>Calendar</button>
-  <button class="nb" onclick="show('messaging',this)"><i class="ti ti-message-dots" aria-hidden="true"></i>Messaging<span class="notif"></span></button>
-  <button class="nb" onclick="show('payroll',this)"><i class="ti ti-coin" aria-hidden="true"></i>Payroll</button>
-  <button class="nb" onclick="show('credentialing',this)"><i class="ti ti-shield-check" aria-hidden="true"></i>Credentialing</button>
-  <button class="nb" onclick="show('integrations',this)"><i class="ti ti-plug" aria-hidden="true"></i>Integrations</button>
-  <button class="nb" onclick="show('hosting',this)"><i class="ti ti-rocket" aria-hidden="true"></i>🚀 Go live</button>
+<div class="trust-bar">
+  <div class="trust-item"><div class="trust-dot"></div>OCP-Verified Members Only</div>
+  <div class="trust-item"><div class="trust-dot"></div>Ontario-Based Platform</div>
+  <div class="trust-item"><div class="trust-dot"></div>Compliance-First Design</div>
+  <div class="trust-item"><div class="trust-dot"></div>Built for Relief Agencies</div>
 </div>
 
-<div class="main" id="main-content">
-
-<!-- ─── DASHBOARD ───────────────────────────────────────────────────── -->
-<div class="panel active" id="panel-dashboard">
-  <div class="h2">Good morning — PharmRelief Agency</div>
-  <p class="sub">Wednesday Jun 3, 2026 · OCP registry: 28,909 pharmacists · 5,416 active pharmacy locations · Pilot ready to launch</p>
-  <div class="g4">
-    <div class="metric"><div class="ml"><i class="ti ti-user-check" style="font-size:12px" aria-hidden="true"></i>Available pharmacists</div><div class="mv" style="color:var(--g)">27</div><div class="ms" style="color:var(--g)">Ready for shifts</div></div>
-    <div class="metric"><div class="ml"><i class="ti ti-calendar-exclamation" style="font-size:12px" aria-hidden="true"></i>Open shifts</div><div class="mv" style="color:var(--a)">18</div><div class="ms" style="color:var(--a)">Need coverage</div></div>
-    <div class="metric"><div class="ml"><i class="ti ti-coin" style="font-size:12px" aria-hidden="true"></i>Est. June revenue</div><div class="mv">$54k</div><div class="ms" style="color:var(--g)">Pilot projection</div></div>
-    <div class="metric"><div class="ml"><i class="ti ti-percentage" style="font-size:12px" aria-hidden="true"></i>Commission earned</div><div class="mv">$6.3k</div><div class="ms" style="color:var(--a)">7.5% avg rate</div></div>
-  </div>
-  <div class="g2" style="margin-bottom:14px">
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:5px"><i class="ti ti-alert-circle" style="color:var(--g)" aria-hidden="true"></i>Urgent actions</div>
-      <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0"></div><div style="flex:1"><div style="font-size:12px;font-weight:500">Westside Pharmacy — Jun 8 uncovered</div><div style="font-size:11px;color:var(--muted)">Sunday 8am–6pm · No pharmacist assigned</div></div><button class="btn-p" style="font-size:10px;padding:4px 10px" onclick="toast('Shift posted — 3 pharmacists notified')">Post now</button></div>
-      <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--a);flex-shrink:0"></div><div style="flex:1"><div style="font-size:12px;font-weight:500">Hamilton General — $4,820 pending payroll</div><div style="font-size:11px;color:var(--muted)">3 invoices awaiting processing</div></div><button class="btn" style="font-size:10px;padding:4px 10px" onclick="show('payroll',document.querySelectorAll('.nb')[6])">Review</button></div>
-      <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--b);flex-shrink:0"></div><div style="flex:1"><div style="font-size:12px;font-weight:500">3 new pharmacist applications</div><div style="font-size:11px;color:var(--muted)">Awaiting OCP verification</div></div><button class="btn" style="font-size:10px;padding:4px 10px" onclick="show('credentialing',document.querySelectorAll('.nb')[7])">Verify</button></div>
+<section>
+  <div class="section-label">Platform Features</div>
+  <h2 class="section-title">Everything relief staffing needs to run smoothly</h2>
+  <p class="section-subtitle">From shift matching to mileage tracking and digital contracts — PharmRelief handles the operations so you can focus on patient care.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <h3>OCP-Verified Matching</h3>
+      <p>Every pharmacist on the platform is verified against the Ontario College of Pharmacists registry before they can accept a shift.</p>
     </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:5px"><i class="ti ti-trending-up" style="color:var(--g)" aria-hidden="true"></i>Revenue by company (Jun)</div>
-      ${[['Hamilton General Rx','$22,400',22400,84200,'#0C447C'],['Acacia Pharmacy','$24,400',24400,84200,'#633806'],['Ajax Compounding','$19,600',19600,84200,'#3C3489'],['Westside Compounding','$17,800',17800,84200,'#085041']].map(([n,v,num,total,col])=>{const p=Math.round(num/total*100);return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px">${n}</span><span style="font-size:12px;font-weight:500">${v} <span style="color:var(--muted);font-weight:400">(${p}%)</span></span></div><div class="bar"><div class="bf" style="width:${p}%;background:${col}"></div></div></div>`;}).join('')}
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <h3>Double-Confirm Shift Flow</h3>
+      <p>Shifts only lock once both the pharmacy and pharmacist confirm — eliminating no-shows and last-minute confusion.</p>
     </div>
-  </div>
-  <div class="card">
-    <div style="font-size:13px;font-weight:500;margin-bottom:12px">Active shift board</div>
-    <table><thead><tr><th>Pharmacist</th><th>Company</th><th>Date</th><th>Time</th><th>Type</th><th>Rate</th><th>Status</th><th>Action</th></tr></thead><tbody>
-    ${[['Goutham Kumar','Ajax Compounding','Jun 5','9am–5pm','Compounding','$81','Confirmed'],['Priya Arora','Acacia Pharmacy','Jun 7','8am–4pm','Dispensary','$78','Pending'],['Indu','Hamilton General','Jun 9','9am–5pm','Hospital','$92','Confirmed'],['Nabil','Westside','Jun 10','7am–7pm','Compounding','$88','Confirmed'],['Sara Johansson','Acacia Pharmacy','Jun 12','9am–5pm','Dispensary','$90','Pending']].map(([ph,co,d,t,ty,r,st])=>`<tr><td style="font-weight:500">${ph}</td><td style="color:var(--muted)">${co}</td><td>${d}</td><td>${t}</td><td>${ty}</td><td style="color:var(--g);font-weight:500">${r}/hr</td><td><span class="pill ${st==='Confirmed'?'pg':'pa'}">${st}</span></td><td>${st==='Pending'?`<button class="btn" style="font-size:10px;padding:2px 8px" onclick="toast('Shift confirmed')">Confirm</button>`:''}</td></tr>`).join('')}
-    </tbody></table>
-  </div>
-</div>
-
-<!-- ─── PHARMACISTS ─────────────────────────────────────────────────── -->
-<div class="panel" id="panel-pharmacists">
-  <div class="h2">Pharmacist directory</div>
-  <p class="sub">48 OCP-registered active members · 27 available now · Real data from OCPSearch__3_.csv</p>
-  <div class="frow">
-    <div class="search"><i class="ti ti-search" aria-hidden="true"></i><input id="ph-q" placeholder="Search name, OCP #, specialty…" oninput="filterPh()"/></div>
-    ${['All','Pharmacist','Pharmacy Technician','Available','Injection'].map((f,i)=>`<button class="chip${i===0?' on':''}" onclick="setPHF('${f}',this)">${f}</button>`).join('')}
-  </div>
-  <div class="g2" id="ph-grid"></div>
-</div>
-
-<!-- ─── LOCATIONS ──────────────────────────────────────────────────── -->
-<div class="panel" id="panel-locations">
-  <div class="h2">Pharmacy locations</div>
-  <p class="sub">20 OCP-accredited active pharmacies loaded · Real data from OCPSearch__4_.csv</p>
-  <div class="frow">
-    <div class="search"><i class="ti ti-search" aria-hidden="true"></i><input id="loc-q" placeholder="Search pharmacy or city…" oninput="filterLoc()"/></div>
-  </div>
-  <div class="g2" id="loc-grid"></div>
-</div>
-
-<!-- ─── BOOKING ────────────────────────────────────────────────────── -->
-<div class="panel" id="panel-booking">
-  <div class="h2">Book a shift</div>
-  <p class="sub">4-step wizard — pharmacist → pharmacy → details → confirm · Live HST calculator</p>
-  <div id="booking-wrap"></div>
-</div>
-
-<!-- ─── CALENDAR ──────────────────────────────────────────────────── -->
-<div class="panel" id="panel-calendar">
-  <div class="h2">Shift calendar — June 2026</div>
-  <p class="sub">Click any day to view and manage bookings · green = confirmed · amber = pending</p>
-  <div id="cal-wrap"></div>
-</div>
-
-<!-- ─── MESSAGING ─────────────────────────────────────────────────── -->
-<div class="panel" id="panel-messaging">
-  <div class="h2">Messaging</div>
-  <p class="sub">Direct communication between pharmacists and pharmacy locations</p>
-  <div style="display:grid;grid-template-columns:230px 1fr;border:0.5px solid var(--bdr);border-radius:12px;overflow:hidden;background:var(--surf)" id="msg-wrap"></div>
-</div>
-
-<!-- ─── PAYROLL ───────────────────────────────────────────────────── -->
-<div class="panel" id="panel-payroll">
-  <div class="h2">Payroll management</div>
-  <p class="sub">HST-inclusive compensation · 13% applied automatically · June 2026</p>
-  <div id="payroll-wrap"></div>
-</div>
-
-<!-- ─── CREDENTIALING ─────────────────────────────────────────────── -->
-<div class="panel" id="panel-credentialing">
-  <div class="h2">Credentialing &amp; licence verification</div>
-  <p class="sub">OCP registration cross-referenced against Ontario College of Pharmacists public registry</p>
-  <div id="cred-wrap"></div>
-</div>
-
-<!-- ─── INTEGRATIONS ──────────────────────────────────────────────── -->
-<div class="panel" id="panel-integrations">
-  <div class="h2">Integration marketplace</div>
-  <p class="sub">Connect PharmRelief to accounting, banking, HR, and ERP systems · optional per tier</p>
-  <div class="frow">
-    ${['All','Accounting','Banking','HR & payroll','Export'].map((f,i)=>`<button class="chip${i===0?' on':''}" onclick="filterInt('${f}',this)">${f}</button>`).join('')}
-  </div>
-  <div class="g3" id="int-grid">
-    ${[['QB','QuickBooks Online','#2CA01C','Accounting','Auto-sync invoices, payroll, HST. Two-way reconciliation.','connected'],['SG','Sage 50','#00B050','Accounting','Export payroll batches. Multi-company support.','available'],['XR','Xero','#13B5EA','Accounting','Real-time invoice sync and bank reconciliation.','available'],['WA','Wave Accounting','#1A73E8','Accounting','Free integration — ideal for independents.','available'],['RB','RBC Banking','#003087','Banking','Bank feed: auto-match invoices to statements. ACH payroll.','connected'],['ST','Stripe Treasury','#635BFF','Banking','Instant pay infrastructure. Pharmacist paid in minutes.','connected'],['PL','Plaid','#00C48C','Banking','Bank verification + ACH transfer to any Canadian bank.','available'],['AD','ADP Run','#D40000','HR & payroll','Push hours to ADP. Auto T4 at year-end.','available'],['CE','Ceridian Dayforce','#FF6B35','HR & payroll','Enterprise HRIS for large pharmacy chains.','available'],['EX','CSV / Excel','#217346','Export','Export any report as formatted Excel or CSV.','connected'],['PD','PDF Reports','#CC0000','Export','Branded PDF invoices and HO reports on schedule.','connected'],['EM','Email / SFTP','#185FA5','Export','Automated report delivery via email or SFTP.','available']].map(([i,n,bg,cat,desc,st])=>`
-    <div style="border:0.5px solid ${st==='connected'?'var(--g)':'var(--bdr)'};border-radius:12px;padding:13px;background:var(--surf)" data-cat="${cat}">
-      <div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:9px">
-        <div style="width:36px;height:36px;border-radius:8px;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i}</div>
-        <div style="flex:1"><div style="font-size:12px;font-weight:500">${n}</div><div style="font-size:10px;color:var(--muted)">${cat}</div></div>
-        <span class="pill ${st==='connected'?'pg':'pb'}">${st==='connected'?'Connected':'Available'}</span>
-      </div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:9px">${desc}</div>
-      <button class="btn${st==='connected'?' btn-p':''}" style="width:100%;font-size:10px;padding:5px" onclick="connectInt(this,'${n}','${st}')">${st==='connected'?'Configure':'Connect'}</button>
-    </div>`).join('')}
-  </div>
-</div>
-
-<!-- ─── HOSTING / GO LIVE ─────────────────────────────────────────── -->
-<div class="panel" id="panel-hosting">
-  <div class="h2">🚀 Go live — complete hosting guide</div>
-  <p class="sub">How to deploy PharmRelief so pharmacies and pharmacists can access it today. Three paths from fastest to most robust.</p>
-
-  <!-- OPTION 1 -->
-  <div style="border:2px solid var(--g);border-radius:14px;overflow:hidden;margin-bottom:16px">
-    <div style="background:var(--g);padding:12px 18px;display:flex;justify-content:space-between;align-items:center">
-      <div style="color:#fff;font-size:14px;font-weight:500">Option 1 — Netlify drag-and-drop <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:11px;margin-left:8px">Fastest · 5 minutes · Free</span></div>
-      <span style="color:rgba(255,255,255,.8);font-size:12px">Best for: getting something live today for pilot pharmacies to test</span>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+      <h3>Digital Contracts & Compliance</h3>
+      <p>Training certificates, digital agreements, and compliance documents — collected automatically before a shift begins.</p>
     </div>
-    <div style="padding:16px;background:var(--surf)">
-      <div class="step-card" style="border-left-color:var(--g)">
-        <div style="font-size:12px;font-weight:500;margin-bottom:6px;color:var(--gd)">Step 1 — Go to netlify.com</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Create a free account. No credit card needed. Go to <span class="url-chip">app.netlify.com</span></div>
-      </div>
-      <div class="step-card">
-        <div style="font-size:12px;font-weight:500;margin-bottom:6px;color:var(--gd)">Step 2 — Drag and drop this HTML file</div>
-        <div style="font-size:11px;color:var(--muted)">On the Netlify dashboard you will see a box that says "Drag and drop your site folder here". Drag the <strong>pharmrelief_complete.html</strong> file directly into that box.</div>
-      </div>
-      <div class="step-card">
-        <div style="font-size:12px;font-weight:500;margin-bottom:6px;color:var(--gd)">Step 3 — You are live in 30 seconds</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Netlify generates a URL like <span class="url-chip">amazing-name-abc123.netlify.app</span></div>
-        <div style="font-size:11px;color:var(--muted)">Share that URL with pilot pharmacies immediately. They can open it on any device.</div>
-      </div>
-      <div class="step-card" style="border-left-color:var(--a)">
-        <div style="font-size:12px;font-weight:500;margin-bottom:6px;color:var(--a)">Step 4 — Custom domain (optional, $12/yr)</div>
-        <div style="font-size:11px;color:var(--muted)">Buy <span class="url-chip">pharmrelief.ca</span> from Namecheap ($12/yr). In Netlify: Settings → Domain management → Add custom domain. Point your domain's DNS to Netlify. Done — HTTPS is automatic.</div>
-      </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+      <h3>GPS Mileage Tracking</h3>
+      <p>Automatic mileage logging for relief pharmacists with QuickBooks, CSV, and PDF export for seamless reimbursement.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg></div>
+      <h3>Automated Reminders</h3>
+      <p>Push notifications and SMS reminders keep pharmacists and pharmacies aligned before every shift.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <h3>Integrated Financials</h3>
+      <p>Invoice generation, shift billing, and financial exports — all managed within the platform and ready for your accountant.</p>
     </div>
   </div>
+</section>
 
-  <!-- OPTION 2 -->
-  <div style="border:0.5px solid var(--bdr);border-radius:14px;overflow:hidden;margin-bottom:16px">
-    <div style="background:var(--b);padding:12px 18px;display:flex;justify-content:space-between;align-items:center">
-      <div style="color:#fff;font-size:14px;font-weight:500">Option 2 — Vercel (React app) <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:11px;margin-left:8px">30 minutes · Free · Scalable</span></div>
-      <span style="color:rgba(255,255,255,.8);font-size:12px">Best for: the full React platform with database and auth</span>
-    </div>
-    <div style="padding:16px;background:var(--surf)">
-      <div style="font-size:12px;font-weight:500;margin-bottom:10px;color:var(--text)">Prerequisites: Node.js installed (<span class="url-chip">nodejs.org</span>) and a GitHub account</div>
-      <div class="code-block"># 1. Install Vercel CLI
-npm install -g vercel
-
-# 2. Create a new React app with your JSX files
-npx create-react-app pharmrelief
-cd pharmrelief
-
-# 3. Copy pharmrelief_web_v2.jsx into src/App.js
-# (replace the contents of src/App.js)
-
-# 4. Deploy to Vercel
-vercel
-
-# Follow prompts — it will ask you to log in and give the project a name
-# Your site will be live at: pharmrelief.vercel.app</div>
-      <div style="background:var(--bl);border-radius:8px;padding:12px;margin-top:8px">
-        <div style="font-size:12px;font-weight:500;color:var(--bd);margin-bottom:4px">Why Vercel?</div>
-        <div style="font-size:11px;color:var(--bd);line-height:1.5">Free tier handles up to 100GB bandwidth/month — more than enough for a pilot with 15 pharmacies. Automatic HTTPS, preview deployments for every code change, and zero server management. When you are ready to add a database, Vercel integrates directly with Supabase and PlanetScale.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- OPTION 3 — Database -->
-  <div style="border:0.5px solid var(--bdr);border-radius:14px;overflow:hidden;margin-bottom:16px">
-    <div style="background:var(--vd);padding:12px 18px">
-      <div style="color:#fff;font-size:14px;font-weight:500">Option 3 — Full stack with real database <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:11px;margin-left:8px">2–4 hours · Free tier · Production-ready</span></div>
-    </div>
-    <div style="padding:16px;background:var(--surf)">
-      <div class="g3" style="margin-bottom:12px">
-        ${[['Supabase','Database + auth + real-time','supabase.com · Free tier: 500MB · PostgreSQL · Built-in auth for pharmacist/pharmacy login · Real-time subscriptions for instant shift notifications · Row-level security so Associates only see their own data'],['Stripe','Payments + instant pay','stripe.com · Test mode first — no real money · Add STRIPE_PUBLISHABLE_KEY to Vercel env vars · Instant pay via Stripe Treasury · Webhook for shift.completed triggers payroll'],['Resend or SendGrid','Email notifications','resend.com · 100 emails/day free · Shift confirmation emails · Invoice delivery · OCP verification alerts · 5 min to set up']].map(([t,sub,d])=>`<div style="background:var(--bg);border-radius:10px;padding:14px"><div style="font-size:13px;font-weight:500;margin-bottom:3px;color:var(--text)">${t}</div><div style="font-size:11px;color:var(--g);margin-bottom:6px;font-weight:500">${sub}</div><div style="font-size:11px;color:var(--muted);line-height:1.5">${d}</div></div>`).join('')}
-      </div>
-      <div class="code-block"># Supabase setup (5 minutes)
-# 1. Go to supabase.com → New project → "pharmrelief"
-# 2. Copy your project URL and anon key
-# 3. Create tables via the SQL editor:
-
-CREATE TABLE pharmacists (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  ocp_number TEXT UNIQUE NOT NULL,
-  name TEXT, type TEXT, injection_training BOOLEAN,
-  available BOOLEAN DEFAULT true,
-  rate_cad INTEGER,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE bookings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  pharmacist_id UUID REFERENCES pharmacists(id),
-  location_id UUID,
-  shift_date DATE, start_time TIME, end_time TIME,
-  type TEXT, rate INTEGER, status TEXT DEFAULT 'Pending',
-  notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-# 4. Add to Vercel: Settings → Environment Variables
-# NEXT_PUBLIC_SUPABASE_URL=your-project-url
-# NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key</div>
-    </div>
-  </div>
-
-  <!-- iOS app -->
-  <div style="border:0.5px solid var(--bdr);border-radius:14px;overflow:hidden;margin-bottom:16px">
-    <div style="background:#1A1A2E;padding:12px 18px">
-      <div style="color:#fff;font-size:14px;font-weight:500">iPhone app — TestFlight in 30 minutes</div>
-    </div>
-    <div style="padding:16px;background:var(--surf)">
-      <div class="code-block"># You already have the React Native app (PharmRelief_iOS_App.zip)
-# Unzip it and run:
-
-cd PharmRelief
-npm install
-npx expo start
-
-# Scan the QR code with your iPhone camera
-# → Opens in Expo Go app (free on App Store)
-# → Share the QR code with pilot pharmacists — they can use it immediately
-
-# For TestFlight distribution (share with up to 10,000 testers):
-npm install -g eas-cli
-eas login
-eas build --platform ios --profile preview
-# Upload the .ipa to App Store Connect → TestFlight
-# Pharmacists install via testflight.apple.com/join/your-code</div>
-      <div style="background:#E1F5EE;border-radius:8px;padding:12px;margin-top:8px;display:flex;gap:12px;align-items:flex-start">
-        <i class="ti ti-info-circle" style="font-size:16px;color:var(--gd);flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
-        <div style="font-size:11px;color:#085041;line-height:1.6">You need an Apple Developer account ($99 CAD/year) to distribute via TestFlight. Without it, pharmacists can still test via Expo Go using the QR code — perfectly fine for the pilot phase.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cost summary -->
-  <div class="card">
-    <div style="font-size:13px;font-weight:500;margin-bottom:12px">Complete hosting cost summary</div>
-    <table><thead><tr><th>Service</th><th>Free tier</th><th>Paid tier</th><th>When to upgrade</th><th>Provider</th></tr></thead><tbody>
-    ${[['Hosting (web platform)','Unlimited (Netlify/Vercel free)','$20/mo','Never for pilot','Netlify or Vercel'],['Database (Supabase)','500MB / 50,000 rows','$25/mo','When you hit 50k bookings','supabase.com'],['Authentication','50,000 MAU free','$25/mo','After 50k users','Supabase Auth'],['Payments (Stripe)','Free — pay per transaction','0.3% + $0.30/txn','Always pay-per-use','stripe.com'],['Email notifications','100/day (Resend)','$20/mo (50k emails)','Month 2','resend.com'],['SMS alerts (Twilio)','$0 — pay per SMS','~$0.0075/SMS','From day 1','twilio.com'],['Domain (pharmrelief.ca)','N/A','$12/year','Day 1','Namecheap'],['Apple Developer (TestFlight)','N/A','$99 CAD/year','Before pilot launch','developer.apple.com'],['Total pilot cost (month 1)','~$0–50','~$180 all-in','—','—']].map(r=>`<tr>${r.map((c,i)=>`<td style="font-weight:${i===0?500:400};color:${i===4?'var(--g)':i===2&&c.includes('$')?'var(--muted)':'var(--text)'}">${c}</td>`).join('')}</tr>`).join('')}
-    </tbody></table>
-    <div style="margin-top:14px;background:var(--gl);border-radius:8px;padding:12px;display:flex;gap:12px">
-      <i class="ti ti-circle-check" style="font-size:18px;color:var(--gd);flex-shrink:0" aria-hidden="true"></i>
-      <div>
-        <div style="font-size:12px;font-weight:500;color:#085041">Bottom line: you can be live today for $12 (domain) + $99 (Apple) = $111 total</div>
-        <div style="font-size:11px;color:#0F6E56;margin-top:2px;line-height:1.5">Everything else is free during the pilot. Stripe only charges when real money moves. Add Supabase ($25/mo) when you need persistent data beyond what the HTML file stores in memory. The web platform HTML file works standalone right now — pharmacies can log in, browse, and book.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Checklist -->
-  <div class="card" style="margin-top:14px">
-    <div style="font-size:13px;font-weight:500;margin-bottom:12px">72-hour go-live checklist</div>
-    <div class="g2">
-      <div id="checklist-left"></div>
-      <div id="checklist-right"></div>
+<div class="how-bg">
+  <div class="how-inner">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">Simple for pharmacies.<br>Simple for pharmacists.</h2>
+    <p class="section-subtitle">PharmRelief handles the coordination so both sides spend less time on admin.</p>
+    <div class="steps-grid">
+      <div class="step"><div class="step-num">01</div><h4>Post a shift</h4><p>Pharmacies post their relief needs with location, date, hours, and requirements. Takes under two minutes.</p></div>
+      <div class="step"><div class="step-num">02</div><h4>Get matched</h4><p>OCP-verified relief pharmacists in your area see the posting and express interest.</p></div>
+      <div class="step"><div class="step-num">03</div><h4>Both sides confirm</h4><p>The shift only locks when both the pharmacy and pharmacist confirm. No surprises.</p></div>
+      <div class="step"><div class="step-num">04</div><h4>Show up & get paid</h4><p>GPS check-in, digital contract signing, automatic invoicing. Done.</p></div>
     </div>
   </div>
 </div>
 
-</div><!-- /main -->
-</div><!-- /app -->
+<section>
+  <div class="section-label">Who It's For</div>
+  <h2 class="section-title">Built for both sides of the relief equation</h2>
+  <p class="section-subtitle">Whether you're running a pharmacy or working relief shifts, PharmRelief is designed around your workflow.</p>
+  <div class="who-grid">
+    <div class="who-card">
+      <span class="who-tag">For Pharmacies</span>
+      <h3>Fill shifts with confidence</h3>
+      <ul class="who-list">
+        <li>Access OCP-verified pharmacists on demand</li>
+        <li>Post shifts and manage coverage in one place</li>
+        <li>Automated compliance — no paperwork chasing</li>
+        <li>No-show alerts with auto-replacement search</li>
+        <li>Full audit trail for every shift</li>
+      </ul>
+    </div>
+    <div class="who-card">
+      <span class="who-tag">For Pharmacists</span>
+      <h3>Work relief on your terms</h3>
+      <ul class="who-list">
+        <li>Browse and pick up shifts near you</li>
+        <li>GPS mileage tracking and automatic invoicing</li>
+        <li>Digital contracts — sign and go</li>
+        <li>Build a verified track record on the platform</li>
+        <li>Get paid faster with integrated financials</li>
+      </ul>
+    </div>
+    <div class="who-card">
+      <span class="who-tag">For Agencies</span>
+      <h3>Manage your roster smarter</h3>
+      <ul class="who-list">
+        <li>Full dispatch portal with KPI dashboard</li>
+        <li>Ranked call list and resolution timeline</li>
+        <li>Compliance tracking across all members</li>
+        <li>Financial exports for QuickBooks and payroll</li>
+        <li>Cross-network candidate history</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
-<div class="toast" id="toast"><i class="ti ti-circle-check" aria-hidden="true"></i><span id="tmsg"></span></div>
+<div class="cta-section" id="waitlist">
+  <h2>Be first when we launch in Ontario</h2>
+  <p>We're onboarding our first pilot pharmacies now. Join the waitlist and get priority access.</p>
+  <div class="cta-form" id="cta-form">
+    <input type="email" id="cta-email" placeholder="your@email.com" />
+    <button id="cta-btn" onclick="handleSignup('cta')">Join the Waitlist</button>
+  </div>
+  <div class="success-msg" id="cta-success" style="background:rgba(255,255,255,0.15); color:#fff; border-color:rgba(255,255,255,0.3); margin-top:1rem;">✓ You're on the list! We'll reach out soon.</div>
+  <p style="color:rgba(255,255,255,0.4); font-size:0.78rem; margin-top:1.2rem;">No spam. Unsubscribe anytime.</p>
+</div>
+
+<footer>
+  <a class="footer-logo" href="#">Pharm<span>Relief</span></a>
+  <p class="footer-text">© 2026 PharmRelief. Ontario, Canada.</p>
+  <div class="footer-ocp"><div class="ocp-dot"></div>OCP-Compliant Platform</div>
+</footer>
 
 <script>
-// ── OCP DATA ────────────────────────────────────────────────────────────
-const COLORS=['#E1F5EE','#E6F1FB','#FBEAF0','#EEEDFE','#FAEEDA','#EAF3DE','#FAECE7'];
-const TCOLS=['#085041','#0C447C','#72243E','#3C3489','#633806','#27500A','#712B13'];
-const SPECS=[['Dispensary','Retail'],['Compounding','IV Prep'],['Hospital','Clinical'],['LTC','Palliative'],['MTM','Diabetes Mgmt'],['Oncology','Sterile'],['Pediatrics','OB/GYN']];
-const STYPES=['Dispensary','Compounding','Hospital','Clinic','LTC','Evening','Overnight'];
-const RATES=[85,64,81,78,92,69,74,88,71,83,67,79,86,62,90,73,77,84,68,80,76,87];
-const AVAIL=[false,true,false,true,true,false,true,false,true,true,false,true,true,false,true,true,false,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,true,false,true,false,true,true,false,true,true,false];
-const RATINGS=[4.7,4.3,4.4,4.9,4.8,4.7,5.0,4.6,4.8,4.5,4.9,4.7,4.4,4.8,4.6,4.9,4.7,4.8,4.5,4.9,4.6,4.8];
+async function handleSignup(source) {
+  const emailEl = document.getElementById(source === 'hero' ? 'hero-email' : 'cta-email');
+  const formEl = document.getElementById(source === 'hero' ? 'hero-form' : 'cta-form');
+  const successEl = document.getElementById(source === 'hero' ? 'hero-success' : 'cta-success');
+  const btnEl = document.getElementById(source === 'hero' ? 'hero-btn' : 'cta-btn');
 
-const RAW_PH=[
-  {id:'632899',name:'Abhi',initials:'A',type:'Pharmacist',injection:false,ocp:'632899'},
-  {id:'635784',name:'Divyam',initials:'D',type:'Pharmacist',injection:false,ocp:'635784'},
-  {id:'625723',name:'Goutham Kumar',initials:'GK',type:'Pharmacist',injection:true,ocp:'625723'},
-  {id:'626810',name:'Indu',initials:'I',type:'Pharmacist',injection:true,ocp:'626810'},
-  {id:'625749',name:'Jagath',initials:'J',type:'Pharmacist',injection:true,ocp:'625749'},
-  {id:'634222',name:'Lu Lu',initials:'LL',type:'Pharmacist',injection:false,ocp:'634222'},
-  {id:'635414',name:'Manmeer Virk',initials:'MV',type:'Pharmacist',injection:false,ocp:'635414'},
-  {id:'628963',name:'Nabil',initials:'N',type:'Pharmacist',injection:true,ocp:'628963'},
-  {id:'631567',name:'Parisa',initials:'P',type:'Pharmacist',injection:true,ocp:'631567'},
-  {id:'622841',name:'Rasheed Al-Amin',initials:'RA',type:'Pharmacist',injection:false,ocp:'622841'},
-  {id:'624109',name:'Sumaiya Begum',initials:'SB',type:'Pharmacist',injection:true,ocp:'624109'},
-  {id:'630271',name:'Tanya Kowalski',initials:'TK',type:'Pharmacist',injection:false,ocp:'630271'},
-  {id:'627384',name:'Uchenna Obi',initials:'UO',type:'Pharmacist',injection:true,ocp:'627384'},
-  {id:'623018',name:'Valentina Cruz',initials:'VC',type:'Pharmacist',injection:false,ocp:'623018'},
-  {id:'629445',name:'Wei Zhang',initials:'WZ',type:'Pharmacist',injection:true,ocp:'629445'},
-  {id:'624073',name:'Priya Arora',initials:'PA',type:'Pharmacist',injection:true,ocp:'624073'},
-  {id:'631425',name:'Sara Johansson',initials:'SJ',type:'Pharmacist',injection:false,ocp:'631425'},
-  {id:'627301',name:'Tamar Cohen',initials:'TC',type:'Pharmacist',injection:true,ocp:'627301'},
-  {id:'623834',name:'Victor Leblanc',initials:'VL',type:'Pharmacist',injection:true,ocp:'623834'},
-  {id:'630092',name:'Adabpreet Kaur',initials:'AK',type:'Pharmacy Technician',injection:false,ocp:'635009'},
-  {id:'631283',name:'Harnoor',initials:'H',type:'Pharmacy Technician',injection:false,ocp:'635066'},
-  {id:'632741',name:'Mehtaabveer Singh',initials:'MS',type:'Pharmacy Technician',injection:false,ocp:'634626'},
-  {id:'629504',name:'Angela Torres',initials:'AT',type:'Pharmacy Technician',injection:false,ocp:'629504'},
-  {id:'627819',name:'Ben Liu',initials:'BL',type:'Pharmacy Technician',injection:false,ocp:'627819'},
-];
+  const email = emailEl.value.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const RAW_LOC=[
-  {id:'311393',name:'H&H Ontario Pharmacy',initials:'HH',address:'43-1111 Finch Ave W',city:'North York',zip:'M3J 2E5',phone:'+1(866)779-9666'},
-  {id:'311210',name:'K-Town Pharmacy',initials:'KT',address:'6-300 Steeles Ave W',city:'Vaughan',zip:'L4J 1A1',phone:'+1(905)764-0909'},
-  {id:'309124',name:'Acacia Pharmacy',initials:'AC',address:'200 James St S',city:'Hamilton',zip:'L8P 3A9',phone:'+1(905)522-1234'},
-  {id:'306730',name:'Action Pharmacy',initials:'AP',address:'850 Upper James St',city:'Hamilton',zip:'L9C 3A4',phone:'+1(905)388-6741'},
-  {id:'309847',name:'Aldershot Pharmacy',initials:'AS',address:'495 Plains Rd E',city:'Burlington',zip:'L7T 2E3',phone:'+1(905)632-8800'},
-  {id:'308934',name:'Ajax Compounding Rx',initials:'AJ',address:'231 Harwood Ave S',city:'Ajax',zip:'L1S 2J1',phone:'+1(905)426-1992'},
-  {id:'311047',name:'Ace Drug Mart',initials:'AC',address:'1375 Richmond St',city:'London',zip:'N6G 2M2',phone:'+1(519)672-5432'},
-  {id:'304512',name:'Advance Pharmacy',initials:'AD',address:'2065 Finch Ave W',city:'North York',zip:'M3N 2V7',phone:'+1(416)749-3300'},
-  {id:'310238',name:'Agincourt Pharmacy',initials:'AG',address:'4750 Sheppard Ave E',city:'Scarborough',zip:'M1S 3V6',phone:'+1(416)291-8765'},
-  {id:'307384',name:'Ancaster Pharmacy',initials:'AN',address:'374 Wilson St E',city:'Ancaster',zip:'L9G 2C2',phone:'+1(905)648-4321'},
-];
-
-const PH=RAW_PH.map((r,i)=>({...r,color:COLORS[i%7],textColor:TCOLS[i%7],specialties:SPECS[i%7],rating:RATINGS[i%RATINGS.length],rate:RATES[i%RATES.length],available:AVAIL[i%AVAIL.length],verified:true}));
-const LOC=RAW_LOC.map((r,i)=>({...r,color:COLORS[i%7],textColor:TCOLS[i%7],shiftType:STYPES[i%7],rate:RATES[i%RATES.length],openShifts:[2,0,1,3,0,4,1,0,2,3][i%10]}));
-
-let BOOKINGS=[
-  {id:'BK001',phId:'625723',locId:'309124',date:'2026-06-05',start:'09:00',end:'17:00',type:'Compounding',rate:81,status:'Confirmed'},
-  {id:'BK002',phId:'624073',locId:'306730',date:'2026-06-07',start:'08:00',end:'16:00',type:'Dispensary',rate:78,status:'Pending'},
-  {id:'BK003',phId:'626810',locId:'311393',date:'2026-06-09',start:'09:00',end:'17:00',type:'Hospital',rate:92,status:'Confirmed'},
-  {id:'BK004',phId:'628963',locId:'311210',date:'2026-06-10',start:'07:00',end:'19:00',type:'LTC',rate:88,status:'Confirmed'},
-  {id:'BK005',phId:'631425',locId:'309124',date:'2026-06-16',start:'09:00',end:'17:00',type:'Dispensary',rate:90,status:'Confirmed'},
-  {id:'BK006',phId:'627301',locId:'308934',date:'2026-06-18',start:'15:00',end:'23:00',type:'Evening',rate:74,status:'Pending'},
-];
-
-let MSGS=[
-  {id:1,from:'Acacia Pharmacy',color:'#E1F5EE',tc:'#085041',initials:'AC',preview:'Hi, coverage needed Sat Jun 7…',time:'10:32 AM',unread:true,thread:[{me:false,text:'Hi, we have a dispensary shift open Saturday 8am–4pm. Rate is $74/hr. Available?',t:'10:32 AM'},{me:true,text:"I'm available that day. Please confirm and I'll add it to my schedule.",t:'10:45 AM'},{me:false,text:'Confirmed! Sending onboarding details shortly.',t:'11:02 AM'}]},
-  {id:2,from:'Action Pharmacy',color:'#FAEEDA',tc:'#633806',initials:'AP',preview:'Urgent: tomorrow 9am–5pm, $88/hr',time:'Yesterday',unread:false,thread:[{me:false,text:'We need emergency coverage tomorrow 9am–5pm. Compounding preferred. $88/hr.',t:'Yesterday'},{me:true,text:'Can cover it. Please send the address and access code.',t:'Yesterday 4pm'}]},
-  {id:3,from:'Aldershot Pharmacy',color:'#E6F1FB',tc:'#0C447C',initials:'AS',preview:'Relief contract discussion',time:'Jun 1',unread:false,thread:[{me:false,text:"We'd like to discuss ongoing relief coverage for our Burlington location.",t:'Jun 1'}]},
-];
-
-let PAYROLL=PH.filter((_,i)=>i%3!==2).slice(0,10).map((p,i)=>({id:`PAY-${1001+i}`,name:p.name,initials:p.initials,color:p.color,tc:p.textColor,pharmacy:LOC[i%LOC.length].name,date:`Jun ${(i%28)+1}, 2026`,hrs:8+(i%4),rate:p.rate,gross:p.rate*(8+(i%4)),hst:parseFloat((p.rate*(8+(i%4))*.13).toFixed(2)),net:parseFloat((p.rate*(8+(i%4))*1.13).toFixed(2)),status:i%3===0?'Paid':i%3===1?'Pending':'Processing'}));
-
-// ── HELPERS ─────────────────────────────────────────────────────────────
-function av(initials,bg,col,size=34,sq=false){return`<div style="width:${size}px;height:${size}px;border-radius:${sq?'8px':'50%'};background:${bg};color:${col};display:flex;align-items:center;justify-content:center;font-size:${size*.3}px;font-weight:500;flex-shrink:0">${initials}</div>`;}
-function pill(t,cls){return`<span class="pill ${cls}">${t}</span>`;}
-function toast(msg){const el=document.getElementById('toast');document.getElementById('tmsg').textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
-
-// ── NAVIGATION ───────────────────────────────────────────────────────────
-function show(id,btn){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
-  document.getElementById('panel-'+id).classList.add('active');
-  if(btn)btn.classList.add('active');
-  if(id==='pharmacists')renderPh();
-  if(id==='locations')renderLoc();
-  if(id==='booking')renderBooking();
-  if(id==='calendar')renderCalendar();
-  if(id==='messaging')renderMsg();
-  if(id==='payroll')renderPayroll();
-  if(id==='credentialing')renderCred();
-  if(id==='hosting')renderChecklist();
-}
-
-function setMode(mode,btn){
-  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  toast(`Switched to ${mode.charAt(0).toUpperCase()+mode.slice(1)} view`);
-}
-
-// ── PHARMACISTS ──────────────────────────────────────────────────────────
-let phFilter='All';
-function filterPh(){renderPh();}
-function setPHF(f,btn){phFilter=f;document.querySelectorAll('.chip').forEach(c=>{if(c.closest('#panel-pharmacists'))c.classList.remove('on')});btn.classList.add('on');renderPh();}
-function renderPh(){
-  const q=(document.getElementById('ph-q')||{}).value||'';
-  let d=PH;
-  if(q)d=d.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.ocp.includes(q)||p.specialties.some(s=>s.toLowerCase().includes(q.toLowerCase())));
-  if(phFilter==='Pharmacist')d=d.filter(p=>p.type==='Pharmacist');
-  if(phFilter==='Pharmacy Technician')d=d.filter(p=>p.type==='Pharmacy Technician');
-  if(phFilter==='Available')d=d.filter(p=>p.available);
-  if(phFilter==='Injection')d=d.filter(p=>p.injection);
-  const g=document.getElementById('ph-grid');
-  if(!g)return;
-  g.innerHTML=d.map(p=>`
-  <div style="background:var(--surf);border:0.5px solid var(--bdr);border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s" onmouseenter="this.style.borderColor='var(--g)'" onmouseleave="this.style.borderColor='var(--bdr)'" onclick="toast('Viewing ${p.name} — OCP #${p.ocp}')">
-    <div style="display:flex;gap:9px;align-items:center;margin-bottom:9px">
-      ${av(p.initials,p.color,p.textColor)}
-      <div style="flex:1"><div style="font-size:13px;font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--muted)">${p.type}</div></div>
-      <div style="font-size:14px;font-weight:500;color:var(--g)">$${p.rate}/hr</div>
-    </div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
-      ${p.specialties.map(s=>`<span class="tag">${s}</span>`).join('')}
-      ${p.injection?'<span class="tag" style="background:var(--bl);color:var(--bd)">Injection</span>':''}
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <span class="vbadge"><i class="ti ti-shield-check" style="font-size:9px" aria-hidden="true"></i>OCP #${p.ocp}</span>
-      ${pill(p.available?'Available':'Pending',p.available?'pg':'pa')}
-    </div>
-  </div>`).join('');
-}
-
-// ── LOCATIONS ────────────────────────────────────────────────────────────
-function filterLoc(){renderLoc();}
-function renderLoc(){
-  const q=(document.getElementById('loc-q')||{}).value||'';
-  let d=LOC;
-  if(q)d=d.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())||l.city.toLowerCase().includes(q.toLowerCase()));
-  const g=document.getElementById('loc-grid');
-  if(!g)return;
-  g.innerHTML=d.map(l=>`
-  <div style="background:var(--surf);border:0.5px solid var(--bdr);border-radius:12px;padding:13px">
-    <div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:9px">
-      ${av(l.initials,l.color,l.textColor,36,true)}
-      <div style="flex:1"><div style="font-size:13px;font-weight:500">${l.name}</div><div style="font-size:11px;color:var(--muted)">${l.address}</div><div style="font-size:11px;color:var(--muted)">${l.city}, ON ${l.zip}</div></div>
-      ${l.openShifts>0?pill(l.openShifts+' open','pa'):''}
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px">
-      <span class="vbadge"><i class="ti ti-shield-check" style="font-size:9px" aria-hidden="true"></i>#${l.id}</span>
-      <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px">
-        <i class="ti ti-phone" style="font-size:11px" aria-hidden="true"></i>${l.phone}
-        <span style="font-weight:500;color:var(--g)">$${l.rate}/hr</span>
-      </div>
-    </div>
-  </div>`).join('');
-}
-
-// ── BOOKING ──────────────────────────────────────────────────────────────
-let bStep=1,bForm={phId:'',locId:'',date:'',start:'09:00',end:'17:00',type:'Dispensary',rate:'',notes:''};
-function renderBooking(){
-  const w=document.getElementById('booking-wrap');if(!w)return;
-  const prog=`<div style="display:flex;align-items:center;gap:0;margin-bottom:18px">
-    ${['Select pharmacist','Select pharmacy','Shift details','Confirm'].map((l,i)=>`
-    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-      <div style="width:26px;height:26px;border-radius:50%;background:${bStep>=i+1?'var(--g)':'var(--bg)'};color:${bStep>=i+1?'#fff':'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500">${bStep>i+1?'✓':i+1}</div>
-      <div style="font-size:9px;color:${bStep===i+1?'var(--gd)':'var(--muted)'};font-weight:${bStep===i+1?500:400};white-space:nowrap">${l}</div>
-    </div>
-    ${i<3?`<div style="flex:1;height:1px;background:${bStep>i+1?'var(--g)':'var(--bdr)'};margin-bottom:12px;margin-top:2px"></div>`:''}`).join('')}
-  </div>`;
-  let body='';
-  const ph=PH.find(p=>p.id===bForm.phId);
-  const loc=LOC.find(l=>l.id===bForm.locId);
-  const hrs=Math.max(0,parseInt(bForm.end||'17')-parseInt(bForm.start||'9'));
-  const rate=parseInt(bForm.rate)||ph?.rate||75;
-  const gross=hrs*rate,hst=Math.round(gross*.13),total=gross+hst;
-  if(bStep===1){body=`<div class="h2" style="font-size:15px;margin-bottom:10px">Select pharmacist</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;max-height:360px;overflow-y:auto">${PH.filter(p=>p.available).map(p=>`<div onclick="bForm.phId='${p.id}';bForm.rate=${p.rate};bStep=2;renderBooking()" style="display:flex;gap:9px;align-items:center;padding:11px;border:1.5px solid ${bForm.phId===p.id?'var(--g)':'var(--bdr)'};border-radius:10px;background:${bForm.phId===p.id?'var(--gl)':'var(--surf)'};cursor:pointer">${av(p.initials,p.color,p.textColor)}<div style="flex:1"><div style="font-size:12px;font-weight:500">${p.name}</div><div style="font-size:10px;color:var(--muted)">${p.specialties[0]}</div></div><span style="font-size:12px;font-weight:500;color:var(--g)">$${p.rate}/hr</span></div>`).join('')}</div>`;}
-  else if(bStep===2){body=`${ph?`<div style="background:var(--gl);border-radius:8px;padding:9px;margin-bottom:12px;display:flex;align-items:center;gap:9px">${av(ph.initials,ph.color,ph.textColor)}<div><div style="font-size:12px;font-weight:500">${ph.name}</div><div style="font-size:10px;color:var(--gd)">OCP #${ph.ocp} selected</div></div></div>`:''}<div class="h2" style="font-size:15px;margin-bottom:10px">Select pharmacy</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;max-height:360px;overflow-y:auto">${LOC.map(l=>`<div onclick="bForm.locId='${l.id}';bStep=3;renderBooking()" style="display:flex;gap:9px;align-items:center;padding:11px;border:1.5px solid ${bForm.locId===l.id?'var(--g)':'var(--bdr)'};border-radius:10px;background:${bForm.locId===l.id?'var(--gl)':'var(--surf)'};cursor:pointer">${av(l.initials,l.color,l.textColor,32,true)}<div style="flex:1"><div style="font-size:12px;font-weight:500">${l.name}</div><div style="font-size:10px;color:var(--muted)">${l.city}</div></div>${l.openShifts>0?`<span class="pill pa">${l.openShifts}</span>`:''}</div>`).join('')}</div>`;}
-  else if(bStep===3){body=`<div class="g2" style="margin-bottom:12px">${[['Date','date','date','2026-06-15'],['Start (24h)','time','start','09:00'],['End (24h)','time','end','17:00'],['Rate ($/hr)','number','rate',rate]].map(([l,t,k,ph])=>`<div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500">${l}</div><input class="inp" type="${t}" value="${bForm[k]||ph}" onchange="bForm['${k}']=this.value;renderBooking()" placeholder="${ph}"/></div>`).join('')}</div>
-  <div style="margin-bottom:10px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500">Shift type</div><div style="display:flex;gap:6px;flex-wrap:wrap">${STYPES.map(s=>`<button onclick="bForm.type='${s}';renderBooking()" style="font-size:11px;padding:5px 12px;border-radius:8px;border:0.5px solid ${bForm.type===s?'var(--g)':'var(--bdr)'};background:${bForm.type===s?'var(--g)':'var(--surf)'};color:${bForm.type===s?'#fff':'var(--muted)'};cursor:pointer;font-family:inherit">${s}</button>`).join('')}</div></div>
-  <div style="margin-bottom:14px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500">Notes</div><textarea class="inp" rows="2" placeholder="Kroll required, bilingual preferred…" onchange="bForm.notes=this.value" style="resize:vertical">${bForm.notes}</textarea></div>
-  <div style="background:var(--gl);border-radius:8px;padding:12px;margin-bottom:14px"><div style="font-size:12px;font-weight:500;color:#085041;margin-bottom:8px">Fee estimate</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${[['Hours',hrs+'h'],['Rate','$'+rate+'/hr'],['Gross','$'+gross],['Total + HST','$'+total]].map(([l,v])=>`<div><div style="font-size:10px;color:var(--gd)">${l}</div><div style="font-size:14px;font-weight:500;color:#085041">${v}</div></div>`).join('')}</div></div>
-  <button class="btn-p" onclick="bStep=4;renderBooking()" ${!bForm.date?'style="opacity:.5;pointer-events:none"':''}>Review &amp; confirm →</button>`;}
-  else if(bStep===4&&ph&&loc){body=`<div class="h2" style="font-size:15px;margin-bottom:14px">Confirm booking</div>
-  <div class="card" style="margin-bottom:12px">
-    <div style="display:flex;gap:10px;margin-bottom:12px">${av(ph.initials,ph.color,ph.textColor,44)}<div><div style="font-size:14px;font-weight:500">${ph.name}</div><div style="font-size:11px;color:var(--muted)">OCP #${ph.ocp} · ${ph.type}</div></div></div>
-    <div style="display:flex;gap:10px;margin-bottom:12px">${av(loc.initials,loc.color,loc.textColor,44,true)}<div><div style="font-size:14px;font-weight:500">${loc.name}</div><div style="font-size:11px;color:var(--muted)">${loc.address}, ${loc.city}</div></div></div>
-    ${[['Date',bForm.date],['Time',`${bForm.start}–${bForm.end} (${hrs}h)`],['Type',bForm.type],['Rate','$'+rate+'/hr'],['Total + HST 13%','$'+total]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--bdr)"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-size:12px;font-weight:500">${v}</span></div>`).join('')}
-  </div>
-  <div style="display:flex;gap:10px">
-    <button class="btn-p" onclick="confirmBook()">Confirm booking</button>
-    <button class="btn" onclick="bStep=3;renderBooking()">Edit</button>
-  </div>`;}
-  w.innerHTML=`<div style="background:var(--surf);border:0.5px solid var(--bdr);border-radius:12px;padding:16px">${prog}${body}</div>`;
-}
-function confirmBook(){
-  const id='BK'+String(BOOKINGS.length+100).padStart(3,'0');
-  const ph=PH.find(p=>p.id===bForm.phId);const loc=LOC.find(l=>l.id===bForm.locId);
-  const rate=parseInt(bForm.rate)||ph?.rate||75;
-  BOOKINGS.push({id,phId:bForm.phId,locId:bForm.locId,date:bForm.date,start:bForm.start,end:bForm.end,type:bForm.type,rate,status:'Pending'});
-  bStep=1;bForm={phId:'',locId:'',date:'',start:'09:00',end:'17:00',type:'Dispensary',rate:'',notes:''};
-  toast('Shift booked — '+ph?.name+' at '+loc?.name);
-  renderBooking();
-}
-
-// ── CALENDAR ─────────────────────────────────────────────────────────────
-let calSel=3;
-function renderCalendar(){
-  const w=document.getElementById('cal-wrap');if(!w)return;
-  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const firstDay=new Date(2026,5,1).getDay();
-  function ds(d){return`2026-06-${String(d).padStart(2,'0')}`;}
-  function bfd(d){return BOOKINGS.filter(b=>b.date===ds(d));}
-  const selBks=bfd(calSel);
-  w.innerHTML=`
-  <div class="g2" style="gap:14px">
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <span style="font-family:'Fraunces',serif;font-size:16px;font-weight:500">June 2026</span>
-        <div style="display:flex;gap:10px;font-size:11px;color:var(--muted)">
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--g);display:inline-block"></span>Confirmed</span>
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--a);display:inline-block"></span>Pending</span>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">${DAYS.map(d=>`<div style="font-size:10px;color:var(--muted);text-align:center;padding:3px 0;font-weight:500">${d[0]}</div>`).join('')}</div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">
-        ${Array(firstDay).fill('<div></div>').join('')}
-        ${Array(30).fill(null).map((_,i)=>{const d=i+1;const bks=bfd(d);const isT=d===3;const isSel=calSel===d;
-        return`<div onclick="calSel=${d};renderCalendar()" class="cal-cell${bks.length?' has':''}${isT?' today':''}${isSel?' sel':''}">
-          <div class="cal-num" style="color:${isT?'var(--b)':isSel?'var(--gd)':'var(--text)'}">${d}</div>
-          ${bks.slice(0,2).map(b=>{const p=PH.find(x=>x.id===b.phId);return p?`<div class="cal-dot" style="background:${b.status==='Confirmed'?'var(--g)':'var(--a)'}">${p.initials}</div>`:''}).join('')}
-          ${bks.length>2?`<div style="font-size:8px;color:var(--muted);text-align:center">+${bks.length-2}</div>`:''}
-        </div>`;}).join('')}
-      </div>
-    </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:500;margin-bottom:12px">Jun ${calSel} shifts</div>
-      ${selBks.length===0?`<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No shifts · <span style="color:var(--g);cursor:pointer" onclick="show('booking',document.querySelectorAll('.nb')[3])">Book one</span></div>`:
-      selBks.map(b=>{const p=PH.find(x=>x.id===b.phId);const l=LOC.find(x=>x.id===b.locId);if(!p||!l)return'';const hrs=Math.max(0,parseInt(b.end)-parseInt(b.start));
-      return`<div style="border-left:3px solid ${b.status==='Confirmed'?'var(--g)':'var(--a)'};border-radius:8px;padding:11px;background:var(--bg);margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">${av(p.initials,p.color,p.textColor)}<div style="flex:1"><div style="font-size:12px;font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--muted)">${l.name}</div></div>${pill(b.status,b.status==='Confirmed'?'pg':'pa')}</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:7px">${b.start}–${b.end} (${hrs}h) · ${b.type} · $${b.rate}/hr · $${b.rate*hrs} gross</div>
-        <div style="display:flex;gap:6px">
-          ${b.status==='Pending'?`<button class="btn-p" style="font-size:10px;padding:4px 10px" onclick="BOOKINGS=BOOKINGS.map(x=>x.id==='${b.id}'?{...x,status:'Confirmed'}:x);renderCalendar();toast('Shift confirmed')">Confirm</button>`:''}
-          <button class="btn" style="font-size:10px;padding:4px 10px;border-color:var(--r);color:var(--r)" onclick="BOOKINGS=BOOKINGS.map(x=>x.id==='${b.id}'?{...x,status:'Cancelled'}:x);renderCalendar();toast('Shift cancelled')">Cancel</button>
-        </div>
-      </div>`;}).join('')}
-      <button class="btn-p" style="width:100%;margin-top:8px;font-size:12px" onclick="show('booking',document.querySelectorAll('.nb')[3])">+ Book shift for this day</button>
-    </div>
-  </div>`;
-}
-
-// ── MESSAGING ─────────────────────────────────────────────────────────────
-let curMsg=MSGS[0];
-function renderMsg(){
-  const w=document.getElementById('msg-wrap');if(!w)return;
-  w.innerHTML=`
-  <div style="border-right:0.5px solid var(--bdr)">
-    <div style="padding:10px 12px;border-bottom:0.5px solid var(--bdr);font-size:12px;font-weight:500">Inbox</div>
-    ${MSGS.map(m=>`<div onclick="curMsg=MSGS.find(x=>x.id===${m.id});MSGS=MSGS.map(x=>x.id===${m.id}?{...x,unread:false}:x);renderMsg()" style="padding:11px 12px;border-bottom:0.5px solid var(--bdr);cursor:pointer;background:${m.id===curMsg.id?'var(--gl)':'transparent'}">
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:11px;font-weight:${m.unread?600:500}">${m.from}</span>${m.unread?'<span style="width:7px;height:7px;border-radius:50%;background:#E24B4A;flex-shrink:0;margin-top:2px"></span>':''}</div>
-      <div style="font-size:11px;color:var(--muted)">${m.preview}</div>
-    </div>`).join('')}
-  </div>
-  <div style="display:flex;flex-direction:column">
-    <div style="padding:11px 14px;border-bottom:0.5px solid var(--bdr)"><div style="font-size:13px;font-weight:500">${curMsg.from}</div></div>
-    <div style="flex:1;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:300px;overflow-y:auto">
-      ${curMsg.thread.map(t=>`<div style="display:flex;flex-direction:column;align-items:${t.me?'flex-end':'flex-start'}"><div class="bubble ${t.me?'bubble-out':'bubble-in'}">${t.text}</div></div>`).join('')}
-    </div>
-    <div style="padding:10px 14px;border-top:0.5px solid var(--bdr);display:flex;gap:8px">
-      <input class="inp" id="reply-inp" placeholder="Type a reply…" onkeydown="if(event.key==='Enter')sendReply()" style="flex:1"/>
-      <button class="btn-p" onclick="sendReply()">Send</button>
-    </div>
-  </div>`;
-}
-function sendReply(){
-  const inp=document.getElementById('reply-inp');
-  if(!inp||!inp.value.trim())return;
-  const txt=inp.value.trim();
-  MSGS=MSGS.map(m=>m.id===curMsg.id?{...m,thread:[...m.thread,{me:true,text:txt,t:'Now'}]}:m);
-  curMsg={...curMsg,thread:[...curMsg.thread,{me:true,text:txt,t:'Now'}]};
-  inp.value='';renderMsg();
-}
-
-// ── PAYROLL ───────────────────────────────────────────────────────────────
-function renderPayroll(){
-  const w=document.getElementById('payroll-wrap');if(!w)return;
-  const totP=PAYROLL.filter(r=>r.status==='Pending').reduce((a,r)=>a+r.net,0);
-  const totPaid=PAYROLL.filter(r=>r.status==='Paid').reduce((a,r)=>a+r.net,0);
-  w.innerHTML=`
-  <div class="g4" style="margin-bottom:14px">
-    <div class="metric"><div class="ml">Pending</div><div class="mv" style="color:var(--a)">$${Math.round(totP).toLocaleString()}</div></div>
-    <div class="metric"><div class="ml">Paid (Jun)</div><div class="mv" style="color:var(--g)">$${Math.round(totPaid).toLocaleString()}</div></div>
-    <div class="metric"><div class="ml">HST collected</div><div class="mv">$${Math.round(PAYROLL.reduce((a,r)=>a+r.hst,0)).toLocaleString()}</div></div>
-    <div class="metric"><div class="ml">Invoices</div><div class="mv">${PAYROLL.length}</div></div>
-  </div>
-  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table>
-  <thead><tr><th>Invoice</th><th>Pharmacist</th><th>Pharmacy</th><th>Date</th><th>Hrs</th><th>Gross</th><th>HST</th><th>Net</th><th>Status</th><th>Action</th></tr></thead><tbody>
-  ${PAYROLL.map(r=>`<tr>
-    <td style="color:var(--muted)">${r.id}</td>
-    <td><div style="display:flex;align-items:center;gap:6px">${av(r.initials,r.color,r.tc,24)}<span style="font-weight:500">${r.name}</span></div></td>
-    <td style="color:var(--muted)">${r.pharmacy.substring(0,16)}</td>
-    <td>${r.date}</td><td>${r.hrs}h</td><td>$${r.gross.toLocaleString()}</td>
-    <td style="color:var(--muted)">$${r.hst.toFixed(2)}</td>
-    <td style="font-weight:500">$${r.net.toLocaleString()}</td>
-    <td>${pill(r.status,r.status==='Paid'?'pg':r.status==='Pending'?'pa':'pb')}</td>
-    <td>${r.status==='Pending'?`<button class="btn" style="font-size:10px;padding:2px 8px;color:#085041;border-color:var(--g)" onclick="PAYROLL=PAYROLL.map(x=>x.id==='${r.id}'?{...x,status:'Paid'}:x);renderPayroll();toast('Payment processed')">Mark paid</button>`:''}</td>
-  </tr>`).join('')}
-  </tbody></table></div></div>`;
-}
-
-// ── CREDENTIALING ─────────────────────────────────────────────────────────
-function renderCred(){
-  const w=document.getElementById('cred-wrap');if(!w)return;
-  const CSTS=['Verified','Pending Review','Expired','Suspended'];
-  const getCS=(p,i)=>CSTS[i%4===3?3:i%4===2&&i<5?2:i%4===1&&i<3?1:0];
-  const counts=CSTS.reduce((a,s)=>{a[s]=PH.filter((p,i)=>getCS(p,i)===s).length;return a;},{});
-  w.innerHTML=`
-  <div class="g4" style="margin-bottom:14px">
-    ${[['Verified','var(--g)'],['Pending Review','var(--a)'],['Expired','var(--r)'],['Suspended','#791F1F']].map(([s,c])=>`<div class="metric" style="border-left:3px solid ${c};cursor:pointer" onclick="toast('Filtering by ${s}')"><div class="ml">${s}</div><div class="mv" style="color:${c}">${counts[s]}</div></div>`).join('')}
-  </div>
-  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table>
-  <thead><tr><th>Name</th><th>OCP #</th><th>Type</th><th>Injection</th><th>Status</th><th>Last verified</th><th>Expires</th><th>Action</th></tr></thead><tbody>
-  ${PH.map((p,i)=>{const cs=getCS(p,i);return`<tr>
-    <td><div style="display:flex;align-items:center;gap:7px">${av(p.initials,p.color,p.textColor,26)}<span style="font-weight:500">${p.name}</span></div></td>
-    <td style="color:var(--muted)">${p.ocp}</td>
-    <td>${p.type.replace('Pharmacy ','Pharm. ')}</td>
-    <td>${p.injection?'<span style="color:var(--g)">✓</span>':'<span style="color:var(--muted)">—</span>'}</td>
-    <td>${pill(cs==='Verified'?'Active':cs,cs==='Verified'?'pg':cs==='Pending Review'?'pa':cs==='Expired'?'pr':'pr')}</td>
-    <td style="color:var(--muted)">${['Jan','Feb','Mar','Apr','May','Jun'][i%6]} ${10+(i%18)}, 2026</td>
-    <td>${['Dec','Nov','Oct','Sep'][i%4]} 31, 2026</td>
-    <td><button class="btn" style="font-size:10px;padding:2px 8px" onclick="this.textContent='✓ Verified';this.style.color='#085041';this.style.borderColor='var(--g)';toast('OCP #${p.ocp} verified — active registration confirmed')">Verify</button></td>
-  </tr>`}).join('')}
-  </tbody></table></div></div>`;
-}
-
-// ── INTEGRATIONS ──────────────────────────────────────────────────────────
-function filterInt(cat,btn){
-  btn.closest('.frow').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));btn.classList.add('on');
-  document.querySelectorAll('[data-cat]').forEach(c=>{c.style.display=(cat==='All'||c.dataset.cat===cat)?'block':'none';});
-}
-function connectInt(btn,name,status){
-  if(status==='connected'){toast(name+' — configuration opened');return;}
-  btn.textContent='Connecting…';btn.disabled=true;
-  setTimeout(()=>{btn.textContent='Connected';btn.className='btn btn-p';btn.disabled=false;toast(name+' connected successfully');},1400);
-}
-
-// ── CHECKLIST ─────────────────────────────────────────────────────────────
-function renderChecklist(){
-  const items=[
-    ['Register pharmrelief.ca domain ($12)','namecheap.com'],
-    ['Create Netlify account and deploy this HTML file','netlify.com'],
-    ['Test all 8 modules with 3 dummy accounts','This file, right now'],
-    ['Create Supabase project + schema','supabase.com (free)'],
-    ['Set up Stripe test mode','stripe.com/docs'],
-    ['Lawyer review T&C + contractor agreements','~$800, 2–3 days'],
-    ['Onboard 5 pilot pharmacists by video call','OCP registry search'],
-    ['Contact 3 Shoppers Associates (warm intro)','OPA contacts'],
-    ['Set up QuickBooks sandbox','developer.intuit.com'],
-    ['Configure Twilio SMS alerts','twilio.com (free trial)'],
-    ['Distribute iOS app via TestFlight','expo.dev → eas build'],
-    ['Book first live shift','Pilot pharmacy call'],
-    ['Process first real payment','Stripe + QuickBooks'],
-    ['Send first QuickBooks-synced invoice','Pilot pharmacy'],
-    ['Collect first NPS responses','Week 2'],
-    ['Hit 20 completed shifts → compile data','Week 4'],
-  ];
-  const half=Math.ceil(items.length/2);
-  function renderList(list){
-    return list.map(([t,sub],i)=>`<div style="display:flex;gap:9px;padding:7px 0;border-bottom:0.5px solid var(--bdr)" onclick="this.querySelector('.cb').classList.toggle('checked');this.style.opacity=this.querySelector('.cb').classList.contains('checked')?'.5':'1'">
-      <div class="cb" style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--bdr);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s"></div>
-      <div><div style="font-size:12px;font-weight:500;cursor:pointer">${t}</div><div style="font-size:10px;color:var(--muted)">${sub}</div></div>
-    </div>`).join('');
+  if (!emailRegex.test(email)) {
+    emailEl.style.borderColor = '#e24b4a';
+    emailEl.focus();
+    setTimeout(() => emailEl.style.borderColor = '', 1500);
+    return;
   }
-  const l=document.getElementById('checklist-left');
-  const r=document.getElementById('checklist-right');
-  if(l)l.innerHTML=renderList(items.slice(0,half));
-  if(r)r.innerHTML=renderList(items.slice(half));
-  // Toggle check style
-  document.querySelectorAll('.cb').forEach(cb=>{
-    cb.addEventListener('click',()=>{
-      const checked=cb.classList.toggle('checked');
-      cb.innerHTML=checked?'<i class="ti ti-check" style="font-size:12px;color:#fff" aria-hidden="true"></i>':'';
-      cb.style.background=checked?'var(--g)':'transparent';
-      cb.style.borderColor=checked?'var(--g)':'var(--bdr)';
-    });
-  });
-}
 
-// ── INIT ──────────────────────────────────────────────────────────────────
-renderPh();renderLoc();
+  btnEl.disabled = true;
+  btnEl.textContent = 'Submitting...';
+
+  try {
+    const response = await fetch('https://formspree.io/f/xkoajyoa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ email: email, source: source === 'hero' ? 'Hero form' : 'Bottom CTA' })
+    });
+
+    if (response.ok) {
+      formEl.style.display = 'none';
+      successEl.style.display = 'block';
+    } else {
+      throw new Error('Submission failed');
+    }
+  } catch (e) {
+    btnEl.disabled = false;
+    btnEl.textContent = source === 'hero' ? 'Get Early Access' : 'Join the Waitlist';
+    emailEl.style.borderColor = '#e24b4a';
+    setTimeout(() => emailEl.style.borderColor = '', 2000);
+  }
+}
 </script>
 </body>
 </html>
