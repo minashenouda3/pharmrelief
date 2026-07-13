@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmForum — PharmRelief Community</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#0F6E56;--teal-light:#E1F5EE;--teal-mid:#1D9E75;--teal-dark:#085041;
+  --slate:#1a2332;--slate-mid:#2d3f55;--text-muted:#6b7a8d;
+  --border:rgba(15,110,86,0.15);--bg:#f8faf9;
+  --white:#fff;--danger:#e24b4a;--warning:#BA7517;--success:#3B6D11;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--slate);line-height:1.6;min-height:100vh}
+
+/* NAV */
+.pf-nav{position:sticky;top:0;z-index:100;background:rgba(248,250,249,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0.8rem 1.5rem}
+.pf-logo{font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--teal-dark);text-decoration:none;display:flex;align-items:center;gap:6px}
+.pf-logo span{color:var(--teal-mid);font-style:italic}
+.pf-search{flex:1;max-width:400px;display:flex;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:100px;padding:0 12px;gap:6px;height:34px}
+.pf-search input{border:none;background:transparent;font-size:13px;color:var(--slate);width:100%;outline:none}
+.pf-search input::placeholder{color:var(--text-muted)}
+.pf-nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pf-ocp-badge{background:var(--teal-light);color:var(--teal-dark);font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;border:1px solid rgba(15,110,86,0.2)}
+.pf-auth-btn{background:var(--teal);color:#fff;border:none;padding:6px 14px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.pf-auth-btn:hover{background:var(--teal-dark)}
+.pf-auth-btn.secondary{background:transparent;border:1px solid var(--border);color:var(--slate-mid)}
+
+/* LAYOUT */
+.pf-layout{max-width:1000px;margin:0 auto;display:flex;gap:16px;padding:16px}
+.pf-main{flex:1;min-width:0}
+.pf-sidebar{width:260px;flex-shrink:0}
+
+/* TABS */
+.pf-tabs{display:flex;gap:2px;background:var(--white);border:1px solid var(--border);border-radius:100px;padding:3px;margin-bottom:12px}
+.pf-tab{flex:1;text-align:center;padding:5px 10px;font-size:12px;font-weight:500;border-radius:100px;cursor:pointer;color:var(--text-muted);border:none;background:transparent;font-family:inherit}
+.pf-tab.active{background:var(--teal);color:#fff}
+
+/* NEW POST */
+.pf-new-post{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pf-avatar{width:32px;height:32px;border-radius:50%;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--teal);flex-shrink:0}
+.pf-new-post-input{flex:1;border:1px solid var(--border);background:var(--bg);border-radius:100px;padding:7px 14px;font-size:13px;color:var(--text-muted);outline:none;cursor:pointer;font-family:inherit}
+.pf-new-post-input:focus{border-color:var(--teal-mid);color:var(--slate)}
+.pf-post-btn{background:var(--teal);color:#fff;border:none;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:inherit}
+
+/* POSTS */
+.pf-post{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;display:flex;overflow:hidden;transition:border-color 0.15s}
+.pf-post:hover{border-color:var(--teal-mid)}
+.pf-vote-col{background:#f8faf9;display:flex;flex-direction:column;align-items:center;padding:10px 8px;gap:3px;min-width:44px;border-right:1px solid var(--border)}
+.pf-vote-btn{border:none;background:transparent;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background 0.1s,color 0.1s}
+.pf-vote-btn:hover{background:var(--teal-light);color:var(--teal)}
+.pf-vote-btn.active-up{color:var(--teal)}
+.pf-vote-btn.active-down{color:var(--danger)}
+.pf-vote-count{font-size:11px;font-weight:600;color:var(--slate-mid)}
+.pf-post-content{padding:10px 14px;flex:1;min-width:0}
+.pf-post-meta{display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap}
+.pf-community{font-size:11px;font-weight:600;color:var(--teal);text-decoration:none}
+.pf-community:hover{text-decoration:underline}
+.pf-post-author{font-size:11px;color:var(--text-muted)}
+.pf-post-author strong{color:var(--slate-mid)}
+.pf-flair{font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px}
+.flair-clinical{background:#EAF3DE;color:#27500A}
+.flair-workplace{background:#FAEEDA;color:#633806}
+.flair-relief{background:var(--teal-light);color:var(--teal-dark)}
+.flair-rant{background:#FCEBEB;color:#791F1F}
+.flair-discuss{background:#F1EFE8;color:#444441;border:1px solid #D3D1C7}
+.pf-post-title{font-size:14px;font-weight:500;color:var(--slate);margin-bottom:5px;line-height:1.4;cursor:pointer}
+.pf-post-title:hover{color:var(--teal)}
+.pf-post-preview{font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pf-post-actions{display:flex;gap:4px;flex-wrap:wrap}
+.pf-action{border:none;background:transparent;cursor:pointer;color:var(--text-muted);font-size:11px;font-weight:500;padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:4px;font-family:inherit;transition:background 0.1s}
+.pf-action:hover{background:var(--teal-light);color:var(--teal-dark)}
+
+/* SIDEBAR */
+.pf-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.pf-card-header{background:var(--teal);padding:10px 14px}
+.pf-card-header p{font-size:12px;font-weight:600;color:#fff}
+.pf-card-header.light{background:var(--teal-light)}
+.pf-card-header.light p{color:var(--teal-dark)}
+.pf-card-body{padding:12px 14px}
+.pf-card-body p{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:10px}
+.pf-stat{display:flex;justify-content:space-between;margin-bottom:5px}
+.pf-stat span{font-size:12px;color:var(--text-muted)}
+.pf-stat strong{font-size:12px;font-weight:600;color:var(--slate)}
+.pf-divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.pf-create-btn{width:100%;background:var(--teal);color:#fff;border:none;padding:8px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.pf-create-btn:hover{background:var(--teal-dark)}
+
+/* COMMUNITIES LIST */
+.pf-community-list{list-style:none}
+.pf-community-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.pf-community-item:last-child{border-bottom:none}
+.pf-community-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.pf-community-info{flex:1;min-width:0}
+.pf-community-name{font-size:12px;font-weight:500;color:var(--slate)}
+.pf-community-count{font-size:10px;color:var(--text-muted)}
+.pf-join{font-size:11px;font-weight:500;padding:3px 10px;border-radius:100px;border:1px solid var(--teal);color:var(--teal);background:transparent;cursor:pointer;font-family:inherit}
+.pf-join:hover{background:var(--teal-light)}
+.pf-join.joined{background:var(--teal-light);color:var(--teal-dark);border-color:transparent}
+
+/* MODAL */
+.pf-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center}
+.pf-modal-overlay.open{display:flex}
+.pf-modal{background:var(--white);border-radius:16px;padding:24px;width:100%;max-width:480px;margin:16px}
+.pf-modal h2{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:4px;color:var(--slate)}
+.pf-modal p{font-size:13px;color:var(--text-muted);margin-bottom:16px}
+.pf-input{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--slate);background:var(--white);outline:none;font-family:inherit;margin-bottom:10px}
+.pf-input:focus{border-color:var(--teal-mid)}
+.pf-modal-actions{display:flex;gap:8px;margin-top:8px}
+.pf-modal-btn{flex:1;padding:9px;border-radius:100px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;border:none}
+.pf-modal-btn.primary{background:var(--teal);color:#fff}
+.pf-modal-btn.primary:hover{background:var(--teal-dark)}
+.pf-modal-btn.ghost{background:transparent;border:1px solid var(--border);color:var(--slate-mid)}
+.pf-modal-select{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--slate);background:var(--white);outline:none;font-family:inherit;margin-bottom:10px}
+.pf-modal textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--slate);background:var(--white);outline:none;font-family:inherit;margin-bottom:10px;resize:vertical;min-height:100px}
+.pf-error{color:var(--danger);font-size:12px;margin-bottom:8px}
+
+/* TOAST */
+.pf-toast{position:fixed;bottom:20px;right:20px;background:var(--slate);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.pf-toast.show{opacity:1}
+
+/* LOADING */
+.pf-loading{text-align:center;padding:40px;color:var(--text-muted);font-size:14px}
+
+/* VERIFIED BADGE */
+.pf-verified{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--teal);font-weight:600}
+
+@media(max-width:680px){.pf-sidebar{display:none}.pf-layout{padding:10px}}
+</style>
+</head>
+<body>
+
+<nav class="pf-nav">
+  <a class="pf-logo" href="pharmrelief_phase3.html">Pharm<span>Forum</span></a>
+  <div class="pf-search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="searchInput" placeholder="Search PharmForum" oninput="filterPosts(this.value)" />
+  </div>
+  <div class="pf-nav-right">
+    <span class="pf-ocp-badge" id="ocpBadge" style="display:none">✓ OCP Verified</span>
+    <span id="userDisplay" style="font-size:13px;color:var(--slate-mid);display:none"></span>
+    <button class="pf-auth-btn secondary" id="loginBtn" onclick="openModal('login')">Log in</button>
+    <button class="pf-auth-btn" id="signupBtn" onclick="openModal('signup')">Sign up</button>
+    <button class="pf-auth-btn secondary" id="logoutBtn" style="display:none" onclick="logout()">Log out</button>
+  </div>
+</nav>
+
+<div class="pf-layout">
+  <div class="pf-main">
+
+    <div class="pf-new-post">
+      <div class="pf-avatar" id="navAvatar">?</div>
+      <input class="pf-new-post-input" placeholder="Share something with the community..." onclick="openModal('post')" readonly />
+      <button class="pf-post-btn" onclick="openModal('post')">Post</button>
+    </div>
+
+    <div class="pf-tabs">
+      <button class="pf-tab active" onclick="setTab(this,'hot')">🔥 Hot</button>
+      <button class="pf-tab" onclick="setTab(this,'new')">✨ New</button>
+      <button class="pf-tab" onclick="setTab(this,'top')">📈 Top</button>
+    </div>
+
+    <div id="postsFeed">
+      <div class="pf-loading">Loading posts...</div>
+    </div>
+
+  </div>
+
+  <div class="pf-sidebar">
+    <div class="pf-card">
+      <div class="pf-card-header">
+        <p>🏥 About PharmForum</p>
+      </div>
+      <div class="pf-card-body">
+        <p>The verified community for Ontario pharmacists. Share experiences, get peer support, and discuss the profession — all within PharmRelief.</p>
+        <div class="pf-stat"><span>Members</span><strong id="totalMembers">—</strong></div>
+        <div class="pf-stat"><span>Posts</span><strong id="totalPosts">—</strong></div>
+        <hr class="pf-divider">
+        <p style="font-size:11px;color:var(--teal);font-weight:600">✓ OCP-verified members only</p>
+        <hr class="pf-divider">
+        <button class="pf-create-btn" onclick="openModal('post')">Create Post</button>
+      </div>
+    </div>
+
+    <div class="pf-card">
+      <div class="pf-card-header light">
+        <p>Communities</p>
+      </div>
+      <div class="pf-card-body" style="padding:8px 14px">
+        <ul class="pf-community-list" id="communityList">
+          <li style="font-size:12px;color:var(--text-muted);padding:8px 0">Loading...</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="pf-modal-overlay" id="loginModal">
+  <div class="pf-modal">
+    <h2>Welcome back</h2>
+    <p>Log in to your PharmRelief account</p>
+    <div class="pf-error" id="loginError" style="display:none"></div>
+    <input class="pf-input" id="loginEmail" type="email" placeholder="Email address" />
+    <input class="pf-input" id="loginPassword" type="password" placeholder="Password" />
+    <div class="pf-modal-actions">
+      <button class="pf-modal-btn ghost" onclick="closeModal('login')">Cancel</button>
+      <button class="pf-modal-btn primary" onclick="login()">Log in</button>
+    </div>
+    <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted)">Don't have an account? <a href="#" onclick="switchModal('login','signup')" style="color:var(--teal)">Sign up</a></p>
+  </div>
+</div>
+
+<!-- SIGNUP MODAL -->
+<div class="pf-modal-overlay" id="signupModal">
+  <div class="pf-modal">
+    <h2>Join PharmForum</h2>
+    <p>Create your verified pharmacist account</p>
+    <div class="pf-error" id="signupError" style="display:none"></div>
+    <input class="pf-input" id="signupEmail" type="email" placeholder="Email address" />
+    <input class="pf-input" id="signupUsername" type="text" placeholder="Username (e.g. RPh_Toronto)" />
+    <input class="pf-input" id="signupOCP" type="text" placeholder="OCP Registration Number" />
+    <input class="pf-input" id="signupPassword" type="password" placeholder="Password (min 8 characters)" />
+    <div class="pf-modal-actions">
+      <button class="pf-modal-btn ghost" onclick="closeModal('signup')">Cancel</button>
+      <button class="pf-modal-btn primary" onclick="signup()">Create account</button>
+    </div>
+    <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted)">Already have an account? <a href="#" onclick="switchModal('signup','login')" style="color:var(--teal)">Log in</a></p>
+  </div>
+</div>
+
+<!-- NEW POST MODAL -->
+<div class="pf-modal-overlay" id="postModal">
+  <div class="pf-modal">
+    <h2>Create a post</h2>
+    <p>Share with the PharmForum community</p>
+    <div class="pf-error" id="postError" style="display:none"></div>
+    <select class="pf-modal-select" id="postCommunity"></select>
+    <select class="pf-modal-select" id="postFlair">
+      <option value="">Select flair (optional)</option>
+      <option value="clinical">Clinical</option>
+      <option value="workplace">Workplace</option>
+      <option value="relief">Relief Tips</option>
+      <option value="rant">Rant</option>
+      <option value="discuss">Discussion</option>
+    </select>
+    <input class="pf-input" id="postTitle" type="text" placeholder="Title" maxlength="200" />
+    <textarea class="pf-input" id="postBody" placeholder="Share your thoughts... (optional)" style="resize:vertical;min-height:100px;border-radius:8px"></textarea>
+    <div class="pf-modal-actions">
+      <button class="pf-modal-btn ghost" onclick="closeModal('post')">Cancel</button>
+      <button class="pf-modal-btn primary" onclick="submitPost()">Post</button>
+    </div>
+  </div>
+</div>
+
+<div class="pf-toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://wnktrcqrwidapxcdnmpi.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indua3RyY3Fyd2lkYXB4Y2RubXBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzU0NzMsImV4cCI6MjA5OTUxMTQ3M30.waaWUDwb_UzOedlDfbMr1Hz3uSUcnZnpwZaSAjGWofU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+let communities = [];
+let allPosts = [];
+let currentTab = 'hot';
+
+const DEMO_POSTS = [
+  {id:'d1',title:'Relief pharmacist cancelled 90 min before shift — no backup in place. What\'s your protocol?',body:'Had a nightmare morning. Relief pharmacist cancelled last minute, no-show clause in contract meant nothing because we had no backup list.',flair:'workplace',vote_count:342,comment_count:87,created_at:new Date(Date.now()-7200000).toISOString(),profiles:{username:'PharmMgr_GTA'},communities:{name:'PharmRelief'}},
+  {id:'d2',title:'Minor ailments expansion in Ontario — are you actually prescribing UTI treatments yet?',body:'With the minor ailments expansion now fully live, curious how many of you have started prescribing for UTIs, oral contraceptives, and the other expanded categories.',flair:'clinical',vote_count:218,comment_count:143,created_at:new Date(Date.now()-18000000).toISOString(),profiles:{username:'RPh_Ontario'},communities:{name:'ClinicalCorner'}},
+  {id:'d3',title:'Chain pharmacy expecting relief pharmacists to "onboard" for 2 hours unpaid. Is this normal?',body:'Just got asked to come in 2 hours early on a relief shift to learn their dispensing software. Unpaid of course. When I pushed back I was told "this is just how we do it."',flair:'rant',vote_count:156,comment_count:204,created_at:new Date(Date.now()-28800000).toISOString(),profiles:{username:'PharmRPh_GTA'},communities:{name:'PharmRants'}},
+  {id:'d4',title:'What\'s a fair relief rate in Ontario right now? Seeing huge variation.',body:'I\'ve seen everything from $55/hr to $85/hr for standard relief shifts in the GTA. Rural Ontario is even harder to pin down.',flair:'relief',vote_count:94,comment_count:61,created_at:new Date(Date.now()-43200000).toISOString(),profiles:{username:'ReliefRx_Ottawa'},communities:{name:'ReliefLife'}},
+  {id:'d5',title:'Weekly thread: share your relief wins and horror stories',body:'Every Monday we collect the week\'s best (and worst) relief shift experiences from the Ontario pharmacy community. Drop yours below.',flair:'discuss',vote_count:71,comment_count:312,created_at:new Date(Date.now()-86400000).toISOString(),profiles:{username:'Pharm_Mod'},communities:{name:'PharmRelief'}},
+];
+
+function timeAgo(dateStr){
+  const diff = (Date.now() - new Date(dateStr)) / 1000;
+  if(diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if(diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function flairClass(f){
+  const map = {clinical:'flair-clinical',workplace:'flair-workplace',relief:'flair-relief',rant:'flair-rant',discuss:'flair-discuss'};
+  return map[f] || 'flair-discuss';
+}
+
+function flairLabel(f){
+  const map = {clinical:'Clinical',workplace:'Workplace',relief:'Relief Tips',rant:'Rant',discuss:'Discussion'};
+  return map[f] || f;
+}
+
+function renderPost(p){
+  const flair = p.flair ? `<span class="pf-flair ${flairClass(p.flair)}">${flairLabel(p.flair)}</span>` : '';
+  const comm = p.communities?.name || '';
+  const author = p.profiles?.username || 'anonymous';
+  return `
+  <div class="pf-post" data-id="${p.id}">
+    <div class="pf-vote-col">
+      <button class="pf-vote-btn" onclick="vote('${p.id}',1,this)" title="Upvote">▲</button>
+      <span class="pf-vote-count">${p.vote_count || 0}</span>
+      <button class="pf-vote-btn" onclick="vote('${p.id}',-1,this)" title="Downvote">▼</button>
+    </div>
+    <div class="pf-post-content">
+      <div class="pf-post-meta">
+        ${flair}
+        <span class="pf-community">r/${comm}</span>
+        <span class="pf-post-author">by <strong>${author}</strong> · ${timeAgo(p.created_at)}</span>
+      </div>
+      <div class="pf-post-title">${p.title}</div>
+      ${p.body ? `<div class="pf-post-preview">${p.body}</div>` : ''}
+      <div class="pf-post-actions">
+        <button class="pf-action">💬 ${p.comment_count || 0} comments</button>
+        <button class="pf-action" onclick="copyLink('${p.id}')">🔗 Share</button>
+        <button class="pf-action">🔖 Save</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderFeed(posts){
+  const feed = document.getElementById('postsFeed');
+  if(!posts.length){feed.innerHTML='<div class="pf-loading">No posts yet. Be the first to post!</div>';return;}
+  feed.innerHTML = posts.map(renderPost).join('');
+}
+
+function sortPosts(posts, tab){
+  const sorted = [...posts];
+  if(tab==='hot') sorted.sort((a,b)=> (b.vote_count*2 + b.comment_count) - (a.vote_count*2 + a.comment_count));
+  if(tab==='new') sorted.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+  if(tab==='top') sorted.sort((a,b)=> b.vote_count - a.vote_count);
+  return sorted;
+}
+
+function setTab(el, tab){
+  document.querySelectorAll('.pf-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentTab = tab;
+  renderFeed(sortPosts(allPosts, tab));
+}
+
+function filterPosts(q){
+  const filtered = allPosts.filter(p=> p.title.toLowerCase().includes(q.toLowerCase()) || (p.body||'').toLowerCase().includes(q.toLowerCase()));
+  renderFeed(sortPosts(filtered, currentTab));
+}
+
+async function loadPosts(){
+  try {
+    const {data, error} = await sb.from('posts').select('*, profiles(username), communities(name)').order('created_at', {ascending:false});
+    if(error || !data || !data.length){
+      allPosts = DEMO_POSTS;
+    } else {
+      allPosts = data;
+    }
+  } catch(e){ allPosts = DEMO_POSTS; }
+  renderFeed(sortPosts(allPosts, currentTab));
+  document.getElementById('totalPosts').textContent = allPosts.length;
+}
+
+async function loadCommunities(){
+  const icons = {PharmRelief:'💊',ClinicalCorner:'🩺',ReliefLife:'🚗',MinorAilments:'❤️',PharmRants:'😤'};
+  const colors = {PharmRelief:'var(--teal-light)',ClinicalCorner:'#EAF3DE',ReliefLife:'#FAEEDA',MinorAilments:'#FCEBEB',PharmRants:'#FBEAF0'};
+  try {
+    const {data} = await sb.from('communities').select('*');
+    communities = data || [];
+  } catch(e){ communities = []; }
+  
+  const defaultComms = ['PharmRelief','ClinicalCorner','ReliefLife','MinorAilments','PharmRants'];
+  const displayComms = communities.length ? communities : defaultComms.map(n=>({name:n,slug:n.toLowerCase(),member_count:Math.floor(Math.random()*2000+200)}));
+  
+  document.getElementById('communityList').innerHTML = displayComms.map(c=>`
+    <li class="pf-community-item">
+      <div class="pf-community-icon" style="background:${colors[c.name]||'var(--teal-light)'}">${icons[c.name]||'💊'}</div>
+      <div class="pf-community-info">
+        <div class="pf-community-name">r/${c.name}</div>
+        <div class="pf-community-count">${(c.member_count||0).toLocaleString()} members</div>
+      </div>
+      <button class="pf-join" onclick="joinCommunity(this,'${c.id||c.name}')">Join</button>
+    </li>`).join('');
+
+  const select = document.getElementById('postCommunity');
+  select.innerHTML = '<option value="">Select community</option>' + displayComms.map(c=>`<option value="${c.id||c.name}">${c.name}</option>`).join('');
+  document.getElementById('totalMembers').textContent = displayComms.reduce((a,c)=>a+(c.member_count||0),0).toLocaleString();
+}
+
+function vote(postId, val, btn){
+  if(!currentUser){showToast('Log in to vote');return;}
+  const col = btn.closest('.pf-vote-col');
+  const countEl = col.querySelector('.pf-vote-count');
+  const upBtn = col.querySelector('[title="Upvote"]');
+  const downBtn = col.querySelector('[title="Downvote"]');
+  let count = parseInt(countEl.textContent);
+  const isUp = val===1;
+  const wasActive = btn.classList.contains(isUp?'active-up':'active-down');
+  upBtn.classList.remove('active-up'); downBtn.classList.remove('active-down');
+  if(wasActive){ countEl.textContent = isUp ? count-1 : count+1; }
+  else {
+    if(isUp){ btn.classList.add('active-up'); countEl.textContent = downBtn.classList.contains('active-down') ? count+2 : count+1; }
+    else { btn.classList.add('active-down'); countEl.textContent = upBtn.classList.contains('active-up') ? count-2 : count-1; }
+  }
+}
+
+function joinCommunity(btn, id){
+  if(!currentUser){showToast('Log in to join communities');return;}
+  const joined = btn.classList.toggle('joined');
+  btn.textContent = joined ? 'Joined' : 'Join';
+  showToast(joined ? 'Community joined!' : 'Left community');
+}
+
+function copyLink(id){
+  navigator.clipboard.writeText(window.location.href + '#post-' + id).catch(()=>{});
+  showToast('Link copied!');
+}
+
+function openModal(type){
+  if(type==='post' && !currentUser){showToast('Log in to post');openModal('login');return;}
+  document.getElementById(type+'Modal').classList.add('open');
+}
+function closeModal(type){ document.getElementById(type+'Modal').classList.remove('open'); }
+function switchModal(from,to){ closeModal(from); openModal(to); }
+
+document.querySelectorAll('.pf-modal-overlay').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+async function login(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display='none';
+  if(!email||!pw){errEl.textContent='Please fill in all fields';errEl.style.display='block';return;}
+  const {data,error} = await sb.auth.signInWithPassword({email,password:pw});
+  if(error){errEl.textContent=error.message;errEl.style.display='block';return;}
+  closeModal('login');
+  showToast('Welcome back!');
+  await loadUser(data.user);
+}
+
+async function signup(){
+  const email = document.getElementById('signupEmail').value.trim();
+  const username = document.getElementById('signupUsername').value.trim();
+  const ocp = document.getElementById('signupOCP').value.trim();
+  const pw = document.getElementById('signupPassword').value;
+  const errEl = document.getElementById('signupError');
+  errEl.style.display='none';
+  if(!email||!username||!ocp||!pw){errEl.textContent='Please fill in all fields';errEl.style.display='block';return;}
+  if(pw.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='block';return;}
+  const {data,error} = await sb.auth.signUp({email,password:pw,options:{data:{username,ocp_number:ocp}}});
+  if(error){errEl.textContent=error.message;errEl.style.display='block';return;}
+  if(data.user){
+    await sb.from('profiles').upsert({id:data.user.id,username,ocp_number:ocp,ocp_verified:false});
+  }
+  closeModal('signup');
+  showToast('Account created! Check your email to verify.');
+}
+
+async function submitPost(){
+  const community = document.getElementById('postCommunity').value;
+  const title = document.getElementById('postTitle').value.trim();
+  const body = document.getElementById('postBody').value.trim();
+  const flair = document.getElementById('postFlair').value;
+  const errEl = document.getElementById('postError');
+  errEl.style.display='none';
+  if(!title){errEl.textContent='Please add a title';errEl.style.display='block';return;}
+  
+  const newPost = {
+    id:'local_'+Date.now(),
+    title, body, flair,
+    vote_count:0, comment_count:0,
+    created_at:new Date().toISOString(),
+    profiles:{username: currentProfile?.username || 'You'},
+    communities:{name: communities.find(c=>c.id===community)?.name || 'PharmRelief'},
+    author_id: currentUser?.id,
+    community_id: community
+  };
+
+  try {
+    await sb.from('posts').insert({title,body,flair,author_id:currentUser.id,community_id:community||null});
+  } catch(e){}
+
+  allPosts.unshift(newPost);
+  renderFeed(sortPosts(allPosts, currentTab));
+  closeModal('post');
+  showToast('Post published!');
+  document.getElementById('postTitle').value='';
+  document.getElementById('postBody').value='';
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  updateAuthUI(null);
+  showToast('Logged out');
+}
+
+async function loadUser(user){
+  currentUser = user;
+  const {data} = await sb.from('profiles').select('*').eq('id',user.id).single();
+  currentProfile = data;
+  updateAuthUI(user);
+}
+
+function updateAuthUI(user){
+  const loginBtn = document.getElementById('loginBtn');
+  const signupBtn = document.getElementById('signupBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const userDisplay = document.getElementById('userDisplay');
+  const ocpBadge = document.getElementById('ocpBadge');
+  const avatar = document.getElementById('navAvatar');
+  if(user){
+    loginBtn.style.display='none'; signupBtn.style.display='none';
+    logoutBtn.style.display='block'; userDisplay.style.display='block';
+    const uname = currentProfile?.username || user.email.split('@')[0];
+    userDisplay.textContent = uname;
+    avatar.textContent = uname.slice(0,2).toUpperCase();
+    if(currentProfile?.ocp_verified) ocpBadge.style.display='block';
+  } else {
+    loginBtn.style.display='block'; signupBtn.style.display='block';
+    logoutBtn.style.display='none'; userDisplay.style.display='none';
+    ocpBadge.style.display='none';
+    avatar.textContent='?';
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+async function init(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session?.user) await loadUser(session.user);
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(session?.user) await loadUser(session.user);
+    else { currentUser=null; currentProfile=null; updateAuthUI(null); }
+  });
+  await Promise.all([loadPosts(), loadCommunities()]);
+}
+
+init();
+</script>
+</body>
+</html>
