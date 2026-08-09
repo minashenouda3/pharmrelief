@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmRelief — Shift Booking</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#0F6E56;--teal-light:#E1F5EE;--teal-mid:#1D9E75;--teal-dark:#085041;
+  --slate:#1a2332;--slate-mid:#2d3f55;--muted:#6b7a8d;
+  --border:rgba(15,110,86,0.15);--border-strong:#A8BCC8;
+  --bg:#f8faf9;--white:#fff;
+  --danger:#C0392B;--danger-light:#FDECEA;
+  --amber:#B06000;--amber-light:#FEF3E2;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --radius:10px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:100vh}
+
+/* AUTH SCREEN */
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-box{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+.auth-logo{font-size:22px;font-weight:600;color:var(--teal-dark);margin-bottom:4px}
+.auth-logo span{color:var(--teal-mid);font-style:italic}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+.auth-tabs{display:flex;gap:2px;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:20px}
+.auth-tab{flex:1;text-align:center;padding:7px;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:var(--sans);transition:all 0.15s}
+.auth-tab.active{background:var(--white);color:var(--slate);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.auth-role-tabs{display:flex;gap:8px;margin-bottom:16px}
+.role-tab{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--white);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;font-family:var(--sans);text-align:center;transition:all 0.15s}
+.role-tab.active{border-color:var(--teal-mid);background:var(--teal-light);color:var(--teal-dark)}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:12px;font-weight:600;color:var(--slate-mid);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.03em}
+.auth-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--slate);font-family:var(--sans);outline:none;transition:border 0.15s}
+.auth-input:focus{border-color:var(--teal-mid)}
+.auth-btn{width:100%;background:var(--teal);color:var(--white);border:none;border-radius:var(--radius);padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--sans);margin-top:6px;transition:background 0.2s}
+.auth-btn:hover{background:var(--teal-dark)}
+.auth-btn:disabled{opacity:0.5;cursor:not-allowed}
+.auth-error{color:var(--danger);font-size:12px;margin-bottom:10px;padding:8px 12px;background:var(--danger-light);border-radius:6px;display:none}
+.auth-msg{color:var(--teal);font-size:12px;margin-bottom:10px;padding:8px 12px;background:var(--teal-light);border-radius:6px;display:none}
+
+/* APP SHELL */
+.app{display:none;flex-direction:column;min-height:100vh}
+.app.visible{display:flex}
+.app-nav{background:var(--white);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.app-logo{font-size:17px;font-weight:600;color:var(--teal-dark);text-decoration:none}
+.app-logo span{color:var(--teal-mid);font-style:italic}
+.app-role-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;background:var(--teal-light);color:var(--teal-dark)}
+.app-user{margin-left:auto;font-size:13px;color:var(--muted)}
+.app-logout{background:transparent;border:1px solid var(--border);border-radius:100px;padding:5px 12px;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--sans);margin-left:10px}
+.app-logout:hover{border-color:var(--danger);color:var(--danger)}
+
+/* MAIN TABS */
+.app-tabs{background:var(--white);border-bottom:1px solid var(--border);display:flex;gap:0;padding:0 20px}
+.app-tab{padding:12px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;font-family:var(--sans);transition:all 0.15s}
+.app-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.app-tab:hover{color:var(--teal-mid)}
+
+/* CONTENT */
+.app-content{flex:1;padding:20px;max-width:1000px;width:100%;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600;color:var(--slate)}
+.card-body{padding:16px}
+
+/* SHIFT CARDS */
+.shift-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;transition:border-color 0.15s}
+.shift-card:hover{border-color:var(--teal-mid)}
+.shift-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.shift-pharmacy{font-size:15px;font-weight:600;color:var(--slate)}
+.shift-date{font-size:13px;font-weight:500;color:var(--teal)}
+.shift-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.shift-meta-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.shift-rate{font-size:16px;font-weight:700;color:var(--teal-dark)}
+.shift-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);border:none;transition:all 0.15s}
+.btn-primary{background:var(--teal);color:var(--white)}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-secondary{background:transparent;border:1.5px solid var(--border);color:var(--slate-mid)}
+.btn-secondary:hover{border-color:var(--teal);color:var(--teal)}
+.btn-danger{background:var(--danger);color:var(--white)}
+.btn-danger:hover{opacity:0.85}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* STATUS BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px}
+.badge-open{background:#E8F5E9;color:#1B5E20}
+.badge-pending{background:var(--amber-light);color:var(--amber)}
+.badge-locked{background:var(--teal-light);color:var(--teal-dark)}
+.badge-cancelled{background:var(--danger-light);color:var(--danger)}
+.badge-applied{background:#E3F2FD;color:#0D47A1}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-field{margin-bottom:14px}
+.form-field.full{grid-column:1/-1}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--slate-mid);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.03em}
+.form-input,.form-select,.form-textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--slate);font-family:var(--sans);outline:none;transition:border 0.15s;background:var(--white)}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal-mid)}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.6}
+
+/* CONFIRM STEPS */
+.confirm-steps{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.confirm-step{flex:1;min-width:120px;padding:10px;border-radius:8px;text-align:center;font-size:12px;font-weight:500}
+.step-done{background:var(--teal-light);color:var(--teal-dark);border:1px solid rgba(15,110,86,0.2)}
+.step-pending{background:var(--amber-light);color:var(--amber);border:1px solid rgba(176,96,0,0.2)}
+.step-waiting{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty h3{font-size:16px;font-weight:500;color:var(--slate-mid);margin-bottom:6px}
+.empty p{font-size:13px;line-height:1.6}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--slate);color:var(--white);padding:10px 16px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* PREFERRED STAR */
+.star-btn{background:transparent;border:none;cursor:pointer;font-size:18px;padding:2px 6px;transition:transform 0.15s}
+.star-btn:hover{transform:scale(1.2)}
+
+/* LOADER */
+.loader{text-align:center;padding:32px;color:var(--muted);font-size:13px}
+
+@media(max-width:600px){
+  .form-grid{grid-template-columns:1fr}
+  .shift-card-top{flex-direction:column}
+  .app-tabs{overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- ======= AUTH SCREEN ======= -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">Pharm<span>Relief</span></div>
+    <div class="auth-sub">Ontario's pharmacy relief platform</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Sign in</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Create account</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="auth-role-tabs">
+        <button class="role-tab active" onclick="setRole(this,'pharmacy')">🏥 Pharmacy</button>
+        <button class="role-tab" onclick="setRole(this,'pharmacist')">💊 Pharmacist</button>
+      </div>
+      <div class="auth-error" id="loginError"></div>
+      <div class="auth-msg" id="loginMsg"></div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input class="auth-input" id="loginEmail" type="email" placeholder="you@example.com" />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input class="auth-input" id="loginPassword" type="password" placeholder="••••••••" />
+      </div>
+      <button class="auth-btn" onclick="login()">Sign in</button>
+    </div>
+
+    <div id="signupForm" style="display:none">
+      <div class="auth-role-tabs">
+        <button class="role-tab active" onclick="setRole(this,'pharmacy')">🏥 Pharmacy</button>
+        <button class="role-tab" onclick="setRole(this,'pharmacist')">💊 Pharmacist</button>
+      </div>
+      <div class="auth-error" id="signupError"></div>
+      <div class="auth-msg" id="signupMsg"></div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input class="auth-input" id="signupEmail" type="email" placeholder="you@example.com" />
+      </div>
+      <div id="pharmacyFields">
+        <div class="auth-field">
+          <label>Pharmacy Name</label>
+          <input class="auth-input" id="pharmacyName" placeholder="e.g. Acacia Pharmacy" />
+        </div>
+        <div class="auth-field">
+          <label>City / Location</label>
+          <input class="auth-input" id="pharmacyCity" placeholder="e.g. Toronto, ON" />
+        </div>
+      </div>
+      <div id="pharmacistFields" style="display:none">
+        <div class="auth-field">
+          <label>Full Name</label>
+          <input class="auth-input" id="pharmacistName" placeholder="e.g. Mina Shenouda" />
+        </div>
+        <div class="auth-field">
+          <label>OCP Registration Number</label>
+          <input class="auth-input" id="ocpNumber" placeholder="e.g. OCP-123456" />
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input class="auth-input" id="signupPassword" type="password" placeholder="Min 8 characters" />
+      </div>
+      <button class="auth-btn" onclick="signup()">Create account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= APP SHELL ======= -->
+<div class="app" id="appShell">
+  <nav class="app-nav">
+    <a class="app-logo" href="index.html">Pharm<span>Relief</span></a>
+    <span class="app-role-badge" id="roleBadge">Pharmacist</span>
+    <span class="app-user" id="userLabel"></span>
+    <button class="app-logout" onclick="logout()">Sign out</button>
+  </nav>
+
+  <div class="app-tabs" id="appTabs"></div>
+
+  <div class="app-content">
+
+    <!-- PHARMACY TABS -->
+    <div class="tab-panel" id="panel-post-shift">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Post a New Shift</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="form-label">Shift Date</label>
+              <input class="form-input" id="shiftDate" type="date" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Start Time</label>
+              <input class="form-input" id="shiftStart" type="time" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">End Time</label>
+              <input class="form-input" id="shiftEnd" type="time" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Hourly Rate ($/hr)</label>
+              <input class="form-input" id="shiftRate" type="number" placeholder="e.g. 65" min="0" />
+            </div>
+            <div class="form-field full">
+              <label class="form-label">Location / Address</label>
+              <input class="form-input" id="shiftLocation" placeholder="e.g. 123 Yonge St, Toronto, ON" />
+            </div>
+            <div class="form-field full">
+              <label class="form-label">Software Used</label>
+              <input class="form-input" id="shiftSoftware" placeholder="e.g. Kroll, PharmaClik, Fillware" />
+            </div>
+            <div class="form-field full">
+              <label class="form-label">Notes / Requirements</label>
+              <textarea class="form-textarea" id="shiftNotes" placeholder="Any special requirements, parking info, dress code..."></textarea>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="postShift()">Post Shift</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-my-shifts-pharmacy">
+      <div id="myShiftsPharmacyList"><div class="loader">Loading shifts...</div></div>
+    </div>
+
+    <!-- PHARMACIST TABS -->
+    <div class="tab-panel" id="panel-browse-shifts">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:500;color:var(--slate)">Available Shifts</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer">
+          <input type="checkbox" id="preferredOnly" onchange="loadBrowseShifts()" /> Preferred pharmacies only
+        </label>
+      </div>
+      <div id="browseShiftsList"><div class="loader">Loading shifts...</div></div>
+    </div>
+
+    <div class="tab-panel" id="panel-my-applications">
+      <div id="myApplicationsList"><div class="loader">Loading applications...</div></div>
+    </div>
+
+    <div class="tab-panel" id="panel-my-confirmed">
+      <div id="myConfirmedList"><div class="loader">Loading confirmed shifts...</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://wnktrcqrwidapxcdnmpi.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indua3RyY3Fyd2lkYXB4Y2RubXBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzU0NzMsImV4cCI6MjA5OTUxMTQ3M30.waaWUDwb_UzOedlDfbMr1Hz3uSUcnZnpwZaSAjGWofU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentRole = 'pharmacy';
+let currentProfile = null;
+let authMode = 'login';
+
+// ===== AUTH =====
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&mode==='login')||(i===1&&mode==='signup')));
+  document.getElementById('loginForm').style.display = mode==='login' ? 'block' : 'none';
+  document.getElementById('signupForm').style.display = mode==='signup' ? 'block' : 'none';
+}
+
+function setRole(btn, role) {
+  currentRole = role;
+  btn.closest('.auth-role-tabs').querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (document.getElementById('pharmacyFields')) {
+    document.getElementById('pharmacyFields').style.display = role==='pharmacy' ? 'block' : 'none';
+    document.getElementById('pharmacistFields').style.display = role==='pharmacist' ? 'block' : 'none';
+  }
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if (!email || !pw) { showAuthError('loginError', 'Please fill in all fields.'); return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) { showAuthError('loginError', error.message); return; }
+  await loadUserSession(data.user);
+}
+
+async function signup() {
+  const email = document.getElementById('signupEmail').value.trim();
+  const pw = document.getElementById('signupPassword').value;
+  const errEl = document.getElementById('signupError');
+  errEl.style.display = 'none';
+  if (!email || !pw) { showAuthError('signupError', 'Please fill in all fields.'); return; }
+  if (pw.length < 8) { showAuthError('signupError', 'Password must be at least 8 characters.'); return; }
+
+  const { data, error } = await sb.auth.signUp({ email, password: pw });
+  if (error) { showAuthError('signupError', error.message); return; }
+
+  if (data.user) {
+    if (currentRole === 'pharmacy') {
+      const name = document.getElementById('pharmacyName').value.trim();
+      const city = document.getElementById('pharmacyCity').value.trim();
+      await sb.from('pharmacies').upsert({ id: data.user.id, name, city, email });
+    } else {
+      const fullName = document.getElementById('pharmacistName').value.trim();
+      const ocp = document.getElementById('ocpNumber').value.trim();
+      await sb.from('pharmacist_profiles').upsert({ id: data.user.id, full_name: fullName, ocp_number: ocp, email, ocp_verified: false });
+    }
+  }
+  showAuthMsg('signupMsg', 'Account created! Check your email to verify, then sign in.');
+}
+
+async function loadUserSession(user) {
+  currentUser = user;
+  // Check which role this user is
+  const { data: pharma } = await sb.from('pharmacies').select('*').eq('id', user.id).single();
+  const { data: pharmi } = await sb.from('pharmacist_profiles').select('*').eq('id', user.id).single();
+  if (pharma) { currentRole = 'pharmacy'; currentProfile = pharma; }
+  else if (pharmi) { currentRole = 'pharmacist'; currentProfile = pharmi; }
+  else { currentRole = 'pharmacist'; currentProfile = { full_name: user.email }; }
+  showApp();
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  document.getElementById('appShell').classList.remove('visible');
+  document.getElementById('authScreen').style.display = 'flex';
+}
+
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function showAuthMsg(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ===== APP =====
+function showApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appShell').classList.add('visible');
+  const name = currentRole === 'pharmacy' ? currentProfile?.name : currentProfile?.full_name;
+  document.getElementById('userLabel').textContent = name || currentUser?.email;
+  document.getElementById('roleBadge').textContent = currentRole === 'pharmacy' ? '🏥 Pharmacy' : '💊 Pharmacist';
+  buildTabs();
+}
+
+function buildTabs() {
+  const tabs = document.getElementById('appTabs');
+  if (currentRole === 'pharmacy') {
+    tabs.innerHTML = `
+      <button class="app-tab active" onclick="showTab('post-shift',this)">+ Post Shift</button>
+      <button class="app-tab" onclick="showTab('my-shifts-pharmacy',this)">My Shifts</button>`;
+    showTab('post-shift');
+  } else {
+    tabs.innerHTML = `
+      <button class="app-tab active" onclick="showTab('browse-shifts',this)">Browse Shifts</button>
+      <button class="app-tab" onclick="showTab('my-applications',this)">My Applications</button>
+      <button class="app-tab" onclick="showTab('my-confirmed',this)">Confirmed Shifts</button>`;
+    showTab('browse-shifts');
+    loadBrowseShifts();
+  }
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id)?.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'my-shifts-pharmacy') loadMyShiftsPharmacy();
+  if (id === 'my-applications') loadMyApplications();
+  if (id === 'my-confirmed') loadMyConfirmed();
+}
+
+// ===== POST SHIFT =====
+async function postShift() {
+  const date = document.getElementById('shiftDate').value;
+  const start = document.getElementById('shiftStart').value;
+  const end = document.getElementById('shiftEnd').value;
+  const rate = document.getElementById('shiftRate').value;
+  const location = document.getElementById('shiftLocation').value.trim();
+  const software = document.getElementById('shiftSoftware').value.trim();
+  const notes = document.getElementById('shiftNotes').value.trim();
+
+  if (!date || !start || !end || !rate || !location) { showToast('Please fill in date, times, rate and location.'); return; }
+
+  const { error } = await sb.from('shifts').insert({
+    pharmacy_id: currentUser.id,
+    pharmacy_name: currentProfile?.name || 'Unknown Pharmacy',
+    shift_date: date,
+    start_time: start,
+    end_time: end,
+    hourly_rate: parseFloat(rate),
+    location,
+    software,
+    notes,
+    status: 'open'
+  });
+
+  if (error) { showToast('Error posting shift: ' + error.message); return; }
+  showToast('✓ Shift posted successfully!');
+  document.getElementById('shiftDate').value = '';
+  document.getElementById('shiftStart').value = '';
+  document.getElementById('shiftEnd').value = '';
+  document.getElementById('shiftRate').value = '';
+  document.getElementById('shiftLocation').value = '';
+  document.getElementById('shiftSoftware').value = '';
+  document.getElementById('shiftNotes').value = '';
+}
+
+// ===== PHARMACY: MY SHIFTS =====
+async function loadMyShiftsPharmacy() {
+  const list = document.getElementById('myShiftsPharmacyList');
+  list.innerHTML = '<div class="loader">Loading...</div>';
+  const { data, error } = await sb.from('shifts').select('*, shift_applications(*, pharmacist_profiles(full_name, ocp_number))').eq('pharmacy_id', currentUser.id).order('shift_date', { ascending: false });
+  if (error || !data?.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><h3>No shifts posted yet</h3><p>Post your first shift using the tab above.</p></div>'; return; }
+  list.innerHTML = data.map(s => renderPharmacyShiftCard(s)).join('');
+}
+
+function renderPharmacyShiftCard(s) {
+  const apps = s.shift_applications || [];
+  const confirmed = apps.find(a => a.pharmacy_confirmed && a.pharmacist_confirmed);
+  const pendingApps = apps.filter(a => a.status === 'pending');
+  const statusBadge = confirmed ? '<span class="badge badge-locked">🔒 Locked</span>' :
+    pendingApps.length ? `<span class="badge badge-pending">${pendingApps.length} applicant${pendingApps.length>1?'s':''}</span>` :
+    '<span class="badge badge-open">Open</span>';
+
+  const appsList = apps.length ? apps.map(a => {
+    const pharmaConfirmed = a.pharmacy_confirmed;
+    const pharmiConfirmed = a.pharmacist_confirmed;
+    const isLocked = pharmaConfirmed && pharmiConfirmed;
+    return `<div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:150px">
+        <div style="font-size:13px;font-weight:500">${a.pharmacist_profiles?.full_name || 'Pharmacist'}</div>
+        <div style="font-size:11px;color:var(--muted)">${a.pharmacist_profiles?.ocp_number || ''}</div>
+      </div>
+      <div class="confirm-steps">
+        <div class="confirm-step ${pharmaConfirmed?'step-done':'step-pending'}">${pharmaConfirmed?'✓ You confirmed':'Awaiting your confirm'}</div>
+        <div class="confirm-step ${pharmiConfirmed?'step-done':'step-waiting'}">${pharmiConfirmed?'✓ Pharmacist confirmed':'Awaiting pharmacist'}</div>
+      </div>
+      ${!pharmaConfirmed ? `<button class="btn btn-primary btn-sm" onclick="pharmacyConfirm('${a.id}')">Confirm</button>` : ''}
+      ${isLocked ? '<span class="badge badge-locked">🔒 Shift Locked</span>' : ''}
+    </div>`;
+  }).join('') : '';
+
+  return `<div class="shift-card">
+    <div class="shift-card-top">
+      <div>
+        <div class="shift-date">${formatDate(s.shift_date)} · ${s.start_time}–${s.end_time}</div>
+        <div class="shift-pharmacy" style="margin-top:2px">${s.location}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${statusBadge}
+        <span class="shift-rate">$${s.hourly_rate}/hr</span>
+      </div>
+    </div>
+    ${s.software ? `<div class="shift-meta"><span class="shift-meta-item">💻 ${s.software}</span></div>` : ''}
+    ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${s.notes}</div>` : ''}
+    ${appsList}
+    ${!confirmed && s.status !== 'locked' ? `<div style="margin-top:10px"><button class="btn btn-secondary btn-sm" onclick="cancelShift('${s.id}')">Cancel shift</button></div>` : ''}
+  </div>`;
+}
+
+async function pharmacyConfirm(appId) {
+  const { error } = await sb.from('shift_applications').update({ pharmacy_confirmed: true, status: 'pharmacy_confirmed' }).eq('id', appId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  await checkLockShift(appId);
+  showToast('✓ You confirmed this pharmacist. Waiting for pharmacist confirmation.');
+  loadMyShiftsPharmacy();
+}
+
+async function cancelShift(shiftId) {
+  if (!confirm('Cancel this shift?')) return;
+  await sb.from('shifts').update({ status: 'cancelled' }).eq('id', shiftId);
+  showToast('Shift cancelled.');
+  loadMyShiftsPharmacy();
+}
+
+// ===== PHARMACIST: BROWSE =====
+async function loadBrowseShifts() {
+  const list = document.getElementById('browseShiftsList');
+  list.innerHTML = '<div class="loader">Loading shifts...</div>';
+  const preferredOnly = document.getElementById('preferredOnly')?.checked;
+
+  let query = sb.from('shifts').select('*').eq('status', 'open').order('shift_date', { ascending: true });
+
+  if (preferredOnly && currentUser) {
+    const { data: prefs } = await sb.from('preferred_pharmacies').select('pharmacy_id').eq('pharmacist_id', currentUser.id);
+    const ids = (prefs || []).map(p => p.pharmacy_id);
+    if (ids.length) query = query.in('pharmacy_id', ids);
+    else { list.innerHTML = '<div class="empty"><div class="empty-icon">⭐</div><h3>No preferred pharmacies yet</h3><p>Star pharmacies to see their shifts here.</p></div>'; return; }
+  }
+
+  const { data, error } = await query;
+  if (error || !data?.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><h3>No shifts available</h3><p>Check back soon — new shifts are posted regularly.</p></div>'; return; }
+
+  const { data: myApps } = await sb.from('shift_applications').select('shift_id').eq('pharmacist_id', currentUser.id);
+  const appliedIds = new Set((myApps || []).map(a => a.shift_id));
+  const { data: prefs } = await sb.from('preferred_pharmacies').select('pharmacy_id').eq('pharmacist_id', currentUser.id);
+  const preferredIds = new Set((prefs || []).map(p => p.pharmacy_id));
+
+  list.innerHTML = data.map(s => renderBrowseShiftCard(s, appliedIds.has(s.id), preferredIds.has(s.pharmacy_id))).join('');
+}
+
+function renderBrowseShiftCard(s, alreadyApplied, isPreferred) {
+  return `<div class="shift-card">
+    <div class="shift-card-top">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="shift-pharmacy">${s.pharmacy_name}</div>
+          <button class="star-btn" onclick="togglePreferred('${s.pharmacy_id}', this)" title="${isPreferred?'Remove from preferred':'Add to preferred'}">${isPreferred?'⭐':'☆'}</button>
+        </div>
+        <div class="shift-date">${formatDate(s.shift_date)} · ${s.start_time}–${s.end_time}</div>
+      </div>
+      <span class="shift-rate">$${s.hourly_rate}/hr</span>
+    </div>
+    <div class="shift-meta">
+      <span class="shift-meta-item">📍 ${s.location}</span>
+      ${s.software ? `<span class="shift-meta-item">💻 ${s.software}</span>` : ''}
+    </div>
+    ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin:8px 0">${s.notes}</div>` : ''}
+    <div class="shift-actions">
+      ${alreadyApplied
+        ? '<span class="badge badge-applied">✓ Applied</span>'
+        : `<button class="btn btn-primary btn-sm" onclick="applyShift('${s.id}','${s.pharmacy_id}')">Apply for shift</button>`
+      }
+    </div>
+  </div>`;
+}
+
+async function applyShift(shiftId, pharmacyId) {
+  const { error } = await sb.from('shift_applications').insert({
+    shift_id: shiftId,
+    pharmacist_id: currentUser.id,
+    pharmacy_id: pharmacyId,
+    status: 'pending',
+    pharmacy_confirmed: false,
+    pharmacist_confirmed: false
+  });
+  if (error) { showToast('Error applying: ' + error.message); return; }
+  showToast('✓ Application submitted!');
+  loadBrowseShifts();
+}
+
+async function togglePreferred(pharmacyId, btn) {
+  const isStarred = btn.textContent === '⭐';
+  if (isStarred) {
+    await sb.from('preferred_pharmacies').delete().eq('pharmacist_id', currentUser.id).eq('pharmacy_id', pharmacyId);
+    btn.textContent = '☆';
+    showToast('Removed from preferred');
+  } else {
+    await sb.from('preferred_pharmacies').insert({ pharmacist_id: currentUser.id, pharmacy_id: pharmacyId });
+    btn.textContent = '⭐';
+    showToast('Added to preferred pharmacies!');
+  }
+}
+
+// ===== PHARMACIST: MY APPLICATIONS =====
+async function loadMyApplications() {
+  const list = document.getElementById('myApplicationsList');
+  list.innerHTML = '<div class="loader">Loading...</div>';
+  const { data, error } = await sb.from('shift_applications')
+    .select('*, shifts(pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software)')
+    .eq('pharmacist_id', currentUser.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (error || !data?.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><h3>No pending applications</h3><p>Browse shifts and apply to see them here.</p></div>'; return; }
+
+  list.innerHTML = data.map(a => {
+    const s = a.shifts;
+    return `<div class="shift-card">
+      <div class="shift-card-top">
+        <div>
+          <div class="shift-pharmacy">${s?.pharmacy_name}</div>
+          <div class="shift-date">${formatDate(s?.shift_date)} · ${s?.start_time}–${s?.end_time}</div>
+        </div>
+        <span class="shift-rate">$${s?.hourly_rate}/hr</span>
+      </div>
+      <div class="shift-meta"><span class="shift-meta-item">📍 ${s?.location}</span></div>
+      <div class="confirm-steps">
+        <div class="confirm-step ${a.pharmacy_confirmed?'step-done':'step-pending'}">${a.pharmacy_confirmed?'✓ Pharmacy confirmed':'Awaiting pharmacy'}</div>
+        <div class="confirm-step ${a.pharmacist_confirmed?'step-done':'step-waiting'}">${a.pharmacist_confirmed?'✓ You confirmed':'Your confirmation needed'}</div>
+      </div>
+      ${a.pharmacy_confirmed && !a.pharmacist_confirmed
+        ? `<div style="margin-top:10px"><button class="btn btn-primary btn-sm" onclick="pharmacistConfirm('${a.id}')">✓ Confirm this shift</button></div>`
+        : ''}
+    </div>`;
+  }).join('');
+}
+
+// ===== PHARMACIST: CONFIRMED SHIFTS =====
+async function loadMyConfirmed() {
+  const list = document.getElementById('myConfirmedList');
+  list.innerHTML = '<div class="loader">Loading...</div>';
+  const { data, error } = await sb.from('shift_applications')
+    .select('*, shifts(pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software, notes)')
+    .eq('pharmacist_id', currentUser.id)
+    .eq('pharmacy_confirmed', true)
+    .eq('pharmacist_confirmed', true)
+    .order('created_at', { ascending: false });
+
+  if (error || !data?.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><h3>No confirmed shifts yet</h3><p>Confirmed shifts will appear here once both parties confirm.</p></div>'; return; }
+
+  list.innerHTML = data.map(a => {
+    const s = a.shifts;
+    return `<div class="shift-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="badge badge-locked">🔒 Confirmed</span>
+        <span class="shift-rate">$${s?.hourly_rate}/hr</span>
+      </div>
+      <div class="shift-pharmacy">${s?.pharmacy_name}</div>
+      <div class="shift-date">${formatDate(s?.shift_date)} · ${s?.start_time}–${s?.end_time}</div>
+      <div class="shift-meta">
+        <span class="shift-meta-item">📍 ${s?.location}</span>
+        ${s?.software ? `<span class="shift-meta-item">💻 ${s?.software}</span>` : ''}
+      </div>
+      ${s?.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">${s.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function pharmacistConfirm(appId) {
+  const { error } = await sb.from('shift_applications').update({ pharmacist_confirmed: true, status: 'both_confirmed' }).eq('id', appId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  await checkLockShift(appId);
+  showToast('🔒 Shift confirmed and locked!');
+  loadMyApplications();
+}
+
+async function checkLockShift(appId) {
+  const { data } = await sb.from('shift_applications').select('*').eq('id', appId).single();
+  if (data?.pharmacy_confirmed && data?.pharmacist_confirmed) {
+    await sb.from('shifts').update({ status: 'locked' }).eq('id', data.shift_id);
+  }
+}
+
+// ===== UTILS =====
+function formatDate(d) {
+  if (!d) return '';
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric' });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ===== INIT =====
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) { await loadUserSession(session.user); }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) await loadUserSession(session.user);
+    if (event === 'SIGNED_OUT') {
+      document.getElementById('appShell').classList.remove('visible');
+      document.getElementById('authScreen').style.display = 'flex';
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
