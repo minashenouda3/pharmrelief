@@ -451,7 +451,7 @@ async function signup(){
   if(pw.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='block';return;}
   const {data,error} = await sb.auth.signUp({email,password:pw,options:{data:{username,ocp_number:ocp},emailRedirectTo:'https://pharmrelief.ca/pharmforum.html'}});
   if(error){errEl.textContent=error.message;errEl.style.display='block';return;}
-  if(data.user){
+  if(data.session && data.user){
     await sb.from('profiles').upsert({id:data.user.id,username,ocp_number:ocp,ocp_verified:false});
   }
   closeModal('signup');
@@ -499,7 +499,19 @@ async function logout(){
 
 async function loadUser(user){
   currentUser = user;
-  const {data} = await sb.from('profiles').select('*').eq('id',user.id).single();
+  let {data} = await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+  if(!data){
+    // Profile could not be written at signup (no session until the email is
+    // confirmed, so RLS rejected the insert). Create it from metadata now.
+    const m = user.user_metadata || {};
+    await sb.from('profiles').upsert({
+      id:user.id,
+      username: m.username || user.email.split('@')[0],
+      ocp_number: m.ocp_number || '',
+      ocp_verified:false
+    });
+    ({data} = await sb.from('profiles').select('*').eq('id',user.id).maybeSingle());
+  }
   currentProfile = data;
   updateAuthUI(user);
 }
