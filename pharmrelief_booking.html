@@ -337,7 +337,11 @@ async function signup() {
   if (!email || !pw) { showAuthError('signupError', 'Please fill in all fields.'); return; }
   if (pw.length < 8) { showAuthError('signupError', 'Password must be at least 8 characters.'); return; }
 
-  const { data, error } = await sb.auth.signUp({ email, password: pw });
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password: pw,
+    options: { emailRedirectTo: 'https://pharmrelief.ca/pharmrelief_booking.html' }
+  });
   if (error) { showAuthError('signupError', error.message); return; }
 
   if (data.user) {
