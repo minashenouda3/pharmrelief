@@ -449,7 +449,7 @@ async function signup(){
   errEl.style.display='none';
   if(!email||!username||!ocp||!pw){errEl.textContent='Please fill in all fields';errEl.style.display='block';return;}
   if(pw.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='block';return;}
-  const {data,error} = await sb.auth.signUp({email,password:pw,options:{data:{username,ocp_number:ocp}}});
+  const {data,error} = await sb.auth.signUp({email,password:pw,options:{data:{username,ocp_number:ocp},emailRedirectTo:'https://pharmrelief.ca/pharmforum.html'}});
   if(error){errEl.textContent=error.message;errEl.style.display='block';return;}
   if(data.user){
     await sb.from('profiles').upsert({id:data.user.id,username,ocp_number:ocp,ocp_verified:false});
