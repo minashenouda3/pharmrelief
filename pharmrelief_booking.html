@@ -94,6 +94,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
 .badge-open{background:#E8F5E9;color:#1B5E20}
 .badge-pending{background:var(--amber-light);color:var(--amber)}
 .badge-locked{background:var(--teal-light);color:var(--teal-dark)}
+.pw-wrap{position:relative}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#0d9488;font-size:12px;font-weight:600;cursor:pointer;padding:4px}
+.auth-links{display:flex;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.auth-links a{font-size:13px;color:#0d9488;text-decoration:none}
+.auth-links a:hover{text-decoration:underline}
+.auth-hint{font-size:13px;color:#64748b;margin:0 0 14px;line-height:1.5}
+.pw-meter{height:4px;background:#e2e8f0;border-radius:2px;margin-top:8px;overflow:hidden}
+.pw-meter-bar{height:100%;width:0;border-radius:2px;transition:width .2s,background .2s}
+.pw-hint{font-size:12px;color:#64748b;margin-top:5px;min-height:15px}
+.auth-btn[disabled]{opacity:.6;cursor:not-allowed}
 .badge-agency{background:#eef2ff;color:#4338ca;font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
 .badge-cancelled{background:var(--danger-light);color:var(--danger)}
 .badge-applied{background:#E3F2FD;color:#0D47A1}
@@ -152,22 +162,54 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
     </div>
 
     <div id="loginForm">
-      <div class="auth-role-tabs">
-        <button class="role-tab active" onclick="setRole(this,'pharmacy')">🏥 Pharmacy</button>
-        <button class="role-tab" onclick="setRole(this,'agency')">🤝 Agency</button>
-        <button class="role-tab" onclick="setRole(this,'pharmacist')">💊 Pharmacist</button>
-      </div>
       <div class="auth-error" id="loginError"></div>
       <div class="auth-msg" id="loginMsg"></div>
       <div class="auth-field">
         <label>Email</label>
-        <input class="auth-input" id="loginEmail" type="email" placeholder="you@example.com" />
+        <input class="auth-input" id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com" />
       </div>
       <div class="auth-field">
         <label>Password</label>
-        <input class="auth-input" id="loginPassword" type="password" placeholder="••••••••" />
+        <div class="pw-wrap">
+          <input class="auth-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+          <button type="button" class="pw-toggle" onclick="togglePw('loginPassword',this)" aria-label="Show password">Show</button>
+        </div>
       </div>
-      <button class="auth-btn" onclick="login()">Sign in</button>
+      <button class="auth-btn" id="loginBtn" onclick="login()">Sign in</button>
+      <div class="auth-links">
+        <a href="#" onclick="showForgot();return false;">Forgot your password?</a>
+        <a href="#" onclick="resendConfirmation('login');return false;">Resend confirmation</a>
+      </div>
+    </div>
+
+    <div id="forgotForm" style="display:none">
+      <div class="auth-error" id="forgotError"></div>
+      <div class="auth-msg" id="forgotMsg"></div>
+      <p class="auth-hint">Enter your account email and we'll send you a link to set a new password.</p>
+      <div class="auth-field">
+        <label>Email</label>
+        <input class="auth-input" id="forgotEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <button class="auth-btn" id="forgotBtn" onclick="sendReset()">Send reset link</button>
+      <div class="auth-links"><a href="#" onclick="showLogin();return false;">Back to sign in</a></div>
+    </div>
+
+    <div id="resetForm" style="display:none">
+      <div class="auth-error" id="resetError"></div>
+      <div class="auth-msg" id="resetMsg"></div>
+      <p class="auth-hint">Choose a new password for your account.</p>
+      <div class="auth-field">
+        <label>New password</label>
+        <div class="pw-wrap">
+          <input class="auth-input" id="resetPassword" type="password" autocomplete="new-password" placeholder="Min 8 characters" />
+          <button type="button" class="pw-toggle" onclick="togglePw('resetPassword',this)">Show</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Confirm new password</label>
+        <input class="auth-input" id="resetPassword2" type="password" autocomplete="new-password" placeholder="Re-enter password" />
+      </div>
+      <button class="auth-btn" id="resetBtn" onclick="applyReset()">Update password</button>
     </div>
 
     <div id="signupForm" style="display:none">
@@ -214,7 +256,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
       </div>
       <div class="auth-field">
         <label>Password</label>
-        <input class="auth-input" id="signupPassword" type="password" placeholder="Min 8 characters" />
+        <div class="pw-wrap">
+          <input class="auth-input" id="signupPassword" type="password" autocomplete="new-password" placeholder="Min 8 characters" oninput="updatePwStrength()" />
+          <button type="button" class="pw-toggle" onclick="togglePw('signupPassword',this)">Show</button>
+        </div>
+        <div class="pw-meter"><div class="pw-meter-bar" id="pwBar"></div></div>
+        <div class="pw-hint" id="pwHint"></div>
+      </div>
+      <div class="auth-field">
+        <label>Confirm password</label>
+        <input class="auth-input" id="signupPassword2" type="password" autocomplete="new-password" placeholder="Re-enter password" />
       </div>
       <button class="auth-btn" onclick="signup()">Create account</button>
       <div style="text-align:center;margin-top:10px">
@@ -321,6 +372,163 @@ let currentProfile = null;
 let authMode = 'login';
 
 // ===== AUTH =====
+
+// ===== AUTH UI HELPERS =====
+
+// Supabase error strings are written for developers. Map the ones users
+// actually hit onto something actionable.
+function friendlyAuthError(msg) {
+  const m = (msg || '').toLowerCase();
+  if (m.includes('invalid login credentials'))
+    return 'That email and password combination is not recognised. Check for typos, or use "Forgot your password?" below.';
+  if (m.includes('email not confirmed'))
+    return 'Please confirm your email address first. Check your inbox and spam folder, or use "Resend confirmation".';
+  if (m.includes('user already registered') || m.includes('already been registered'))
+    return 'An account with this email already exists. Try signing in instead.';
+  if (m.includes('rate limit') || m.includes('too many'))
+    return 'Too many attempts. Please wait a minute and try again.';
+  if (m.includes('password should be at least'))
+    return 'Password must be at least 8 characters.';
+  if (m.includes('unable to validate email') || m.includes('invalid email'))
+    return 'That does not look like a valid email address.';
+  if (m.includes('same password'))
+    return 'Your new password must be different from your current one.';
+  if (m.includes('failed to fetch') || m.includes('network'))
+    return 'Could not reach the server. Check your connection and try again.';
+  return msg || 'Something went wrong. Please try again.';
+}
+
+function isValidEmail(e) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
+function togglePw(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  btn.textContent = show ? 'Hide' : 'Show';
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+}
+
+function pwScore(pw) {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  return Math.min(score, 4);
+}
+
+function updatePwStrength() {
+  const pw = document.getElementById('signupPassword').value;
+  const bar = document.getElementById('pwBar');
+  const hint = document.getElementById('pwHint');
+  if (!bar) return;
+  if (!pw) { bar.style.width = '0'; hint.textContent = ''; return; }
+  const score = pwScore(pw);
+  const pct = [15, 35, 60, 80, 100][score];
+  const colors = ['#dc2626', '#f59e0b', '#f59e0b', '#10b981', '#059669'];
+  const labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  bar.style.width = pct + '%';
+  bar.style.background = colors[score];
+  hint.textContent = pw.length < 8 ? 'Must be at least 8 characters' : labels[score];
+  hint.style.color = pw.length < 8 ? '#dc2626' : '#64748b';
+}
+
+// Prevents double-submits, which otherwise trip Supabase rate limits.
+async function withBusy(btnId, label, fn) {
+  const btn = document.getElementById(btnId);
+  const original = btn ? btn.textContent : null;
+  if (btn) { btn.disabled = true; btn.textContent = label; }
+  try { await fn(); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = original; } }
+}
+
+function hideAuthPanels() {
+  ['loginForm', 'signupForm', 'forgotForm', 'resetForm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  ['loginError','loginMsg','signupError','signupMsg','forgotError','forgotMsg','resetError','resetMsg']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+}
+
+function showLogin() {
+  hideAuthPanels();
+  document.getElementById('loginForm').style.display = 'block';
+  document.querySelector('.auth-tabs').style.display = 'flex';
+  switchAuthTab('login');
+}
+
+function showForgot() {
+  hideAuthPanels();
+  document.getElementById('forgotForm').style.display = 'block';
+  document.querySelector('.auth-tabs').style.display = 'none';
+  const em = document.getElementById('loginEmail').value.trim();
+  if (em) document.getElementById('forgotEmail').value = em;
+}
+
+function showReset() {
+  hideAuthPanels();
+  document.getElementById('resetForm').style.display = 'block';
+  document.querySelector('.auth-tabs').style.display = 'none';
+}
+
+async function sendReset() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  document.getElementById('forgotError').style.display = 'none';
+  document.getElementById('forgotMsg').style.display = 'none';
+  if (!isValidEmail(email)) { showAuthError('forgotError', 'Please enter a valid email address.'); return; }
+  await withBusy('forgotBtn', 'Sending...', async () => {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://pharmrelief.ca/pharmrelief_booking.html'
+    });
+    if (error) { showAuthError('forgotError', friendlyAuthError(error.message)); return; }
+    // Deliberately does not reveal whether the address is registered.
+    showAuthMsg('forgotMsg', 'If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.');
+  });
+}
+
+async function applyReset() {
+  const pw = document.getElementById('resetPassword').value;
+  const pw2 = document.getElementById('resetPassword2').value;
+  document.getElementById('resetError').style.display = 'none';
+  document.getElementById('resetMsg').style.display = 'none';
+  if (pw.length < 8) { showAuthError('resetError', 'Password must be at least 8 characters.'); return; }
+  if (pw !== pw2) { showAuthError('resetError', 'The two passwords do not match.'); return; }
+  await withBusy('resetBtn', 'Updating...', async () => {
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if (error) { showAuthError('resetError', friendlyAuthError(error.message)); return; }
+    showAuthMsg('resetMsg', 'Password updated. Signing you in...');
+    history.replaceState(null, '', location.pathname);
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) await loadUserSession(session.user);
+    else setTimeout(showLogin, 1200);
+  });
+}
+
+// Surfaces auth errors that Supabase returns in the URL fragment
+// (expired confirmation links, used tokens) instead of failing silently.
+function handleAuthHash() {
+  const h = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const type = h.get('type');
+  const err = h.get('error_description') || h.get('error');
+  if (err) {
+    showLogin();
+    const nice = decodeURIComponent(err).replace(/\+/g, ' ');
+    showAuthError('loginError',
+      /expired|invalid/i.test(nice)
+        ? 'That link has expired or was already used. Request a new one below.'
+        : nice);
+    history.replaceState(null, '', location.pathname);
+    return true;
+  }
+  if (type === 'recovery') { showReset(); return true; }
+  return false;
+}
+
 function switchAuthTab(mode) {
   authMode = mode;
   document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&mode==='login')||(i===1&&mode==='signup')));
@@ -341,12 +549,15 @@ function setRole(btn, role) {
 async function login() {
   const email = document.getElementById('loginEmail').value.trim();
   const pw = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
-  errEl.style.display = 'none';
-  if (!email || !pw) { showAuthError('loginError', 'Please fill in all fields.'); return; }
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
-  if (error) { showAuthError('loginError', error.message); return; }
-  await loadUserSession(data.user);
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginMsg').style.display = 'none';
+  if (!email || !pw) { showAuthError('loginError', 'Please enter your email and password.'); return; }
+  if (!isValidEmail(email)) { showAuthError('loginError', 'Please enter a valid email address.'); return; }
+  await withBusy('loginBtn', 'Signing in...', async () => {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) { showAuthError('loginError', friendlyAuthError(error.message)); return; }
+    await loadUserSession(data.user);
+  });
 }
 
 async function signup() {
@@ -354,8 +565,12 @@ async function signup() {
   const pw = document.getElementById('signupPassword').value;
   const errEl = document.getElementById('signupError');
   errEl.style.display = 'none';
+  const pw2 = document.getElementById('signupPassword2').value;
+  document.getElementById('signupMsg').style.display = 'none';
   if (!email || !pw) { showAuthError('signupError', 'Please fill in all fields.'); return; }
+  if (!isValidEmail(email)) { showAuthError('signupError', 'Please enter a valid email address.'); return; }
   if (pw.length < 8) { showAuthError('signupError', 'Password must be at least 8 characters.'); return; }
+  if (pw !== pw2) { showAuthError('signupError', 'The two passwords do not match.'); return; }
 
   const role = currentRole;
   const meta = { role };
@@ -378,7 +593,7 @@ async function signup() {
       emailRedirectTo: 'https://pharmrelief.ca/pharmrelief_booking.html'
     }
   });
-  if (error) { showAuthError('signupError', error.message); return; }
+  if (error) { showAuthError('signupError', friendlyAuthError(error.message)); return; }
 
   // Only write the profile row now if signUp returned an active session
   // (i.e. email confirmation is disabled). Otherwise RLS will reject the
@@ -429,18 +644,24 @@ async function ensureProfile(user) {
   return error ? error.message : null;
 }
 
-async function resendConfirmation() {
-  const email = document.getElementById('signupEmail').value.trim();
-  document.getElementById('signupError').style.display = 'none';
-  document.getElementById('signupMsg').style.display = 'none';
-  if (!email) { showAuthError('signupError', 'Enter your email address above first.'); return; }
+async function resendConfirmation(source) {
+  const onLogin = source === 'login';
+  const errId = onLogin ? 'loginError' : 'signupError';
+  const msgId = onLogin ? 'loginMsg' : 'signupMsg';
+  const email = document.getElementById(onLogin ? 'loginEmail' : 'signupEmail').value.trim();
+  document.getElementById(errId).style.display = 'none';
+  document.getElementById(msgId).style.display = 'none';
+  if (!isValidEmail(email)) {
+    showAuthError(errId, 'Enter your email address above first, then click Resend confirmation.');
+    return;
+  }
   const { error } = await sb.auth.resend({
     type: 'signup',
     email,
     options: { emailRedirectTo: 'https://pharmrelief.ca/pharmrelief_booking.html' }
   });
-  if (error) { showAuthError('signupError', error.message); return; }
-  showAuthMsg('signupMsg', 'Confirmation email sent. Check your inbox and spam folder.');
+  if (error) { showAuthError(errId, friendlyAuthError(error.message)); return; }
+  showAuthMsg(msgId, 'Confirmation email sent. Check your inbox and spam folder.');
 }
 
 async function loadUserSession(user) {
@@ -840,16 +1061,45 @@ function showToast(msg) {
 }
 
 // ===== INIT =====
+// Submit on Enter rather than forcing a click.
+function wireEnterKeys() {
+  const map = {
+    loginEmail: login, loginPassword: login,
+    signupEmail: signup, signupPassword: signup, signupPassword2: signup,
+    forgotEmail: sendReset,
+    resetPassword: applyReset, resetPassword2: applyReset
+  };
+  Object.entries(map).forEach(([id, fn]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); fn(); }
+    });
+  });
+}
+
 async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) { await loadUserSession(session.user); }
+  wireEnterKeys();
+
+  let recovering = false;
+  // PASSWORD_RECOVERY fires when the user arrives via a reset link. The
+  // guard stops the app shell loading over the set-new-password form.
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session?.user) await loadUserSession(session.user);
+    if (event === 'PASSWORD_RECOVERY') { recovering = true; showReset(); return; }
+    if (event === 'SIGNED_IN' && session?.user && !recovering) await loadUserSession(session.user);
     if (event === 'SIGNED_OUT') {
+      recovering = false;
       document.getElementById('appShell').classList.remove('visible');
       document.getElementById('authScreen').style.display = 'flex';
+      showLogin();
     }
   });
+
+  // An error or recovery marker in the URL takes precedence over any
+  // existing session, so the user is told why their link failed.
+  if (handleAuthHash()) return;
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) { await loadUserSession(session.user); }
 }
 
 init();
