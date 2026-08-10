@@ -337,32 +337,75 @@ async function signup() {
   if (!email || !pw) { showAuthError('signupError', 'Please fill in all fields.'); return; }
   if (pw.length < 8) { showAuthError('signupError', 'Password must be at least 8 characters.'); return; }
 
+  const role = currentRole;
+  const meta = { role };
+  if (role === 'pharmacy') {
+    meta.pharmacy_name = document.getElementById('pharmacyName').value.trim();
+    meta.pharmacy_city = document.getElementById('pharmacyCity').value.trim();
+  } else {
+    meta.full_name = document.getElementById('pharmacistName').value.trim();
+    meta.ocp_number = document.getElementById('ocpNumber').value.trim();
+  }
+
   const { data, error } = await sb.auth.signUp({
     email,
     password: pw,
-    options: { emailRedirectTo: 'https://pharmrelief.ca/pharmrelief_booking.html' }
+    options: {
+      data: meta,
+      emailRedirectTo: 'https://pharmrelief.ca/pharmrelief_booking.html'
+    }
   });
   if (error) { showAuthError('signupError', error.message); return; }
 
-  if (data.user) {
-    if (currentRole === 'pharmacy') {
-      const name = document.getElementById('pharmacyName').value.trim();
-      const city = document.getElementById('pharmacyCity').value.trim();
-      await sb.from('pharmacies').upsert({ id: data.user.id, name, city, email });
-    } else {
-      const fullName = document.getElementById('pharmacistName').value.trim();
-      const ocp = document.getElementById('ocpNumber').value.trim();
-      await sb.from('pharmacist_profiles').upsert({ id: data.user.id, full_name: fullName, ocp_number: ocp, email, ocp_verified: false });
-    }
+  // Only write the profile row now if signUp returned an active session
+  // (i.e. email confirmation is disabled). Otherwise RLS will reject the
+  // insert because auth.uid() is null — the row is created in
+  // ensureProfile() on first authenticated sign-in instead.
+  if (data.session && data.user) {
+    const err = await ensureProfile(data.user);
+    if (err) { showAuthError('signupError', 'Profile setup failed: ' + err); return; }
   }
   showAuthMsg('signupMsg', 'Account created! Check your email to verify, then sign in.');
 }
 
+// Creates the pharmacy / pharmacist_profiles row from signup metadata.
+// Safe to call repeatedly — upsert is idempotent. Returns an error string
+// on failure, or null on success.
+async function ensureProfile(user) {
+  const m = user.user_metadata || {};
+  if (!m.role) return null; // nothing recorded at signup; nothing to create
+  if (m.role === 'pharmacy') {
+    const { error } = await sb.from('pharmacies').upsert({
+      id: user.id,
+      name: m.pharmacy_name || user.email,
+      city: m.pharmacy_city || '',
+      email: user.email
+    });
+    return error ? error.message : null;
+  }
+  const { error } = await sb.from('pharmacist_profiles').upsert({
+    id: user.id,
+    full_name: m.full_name || user.email,
+    ocp_number: m.ocp_number || '',
+    email: user.email,
+    ocp_verified: false
+  });
+  return error ? error.message : null;
+}
+
 async function loadUserSession(user) {
   currentUser = user;
-  // Check which role this user is
-  const { data: pharma } = await sb.from('pharmacies').select('*').eq('id', user.id).single();
-  const { data: pharmi } = await sb.from('pharmacist_profiles').select('*').eq('id', user.id).single();
+  let { data: pharma } = await sb.from('pharmacies').select('*').eq('id', user.id).maybeSingle();
+  let { data: pharmi } = await sb.from('pharmacist_profiles').select('*').eq('id', user.id).maybeSingle();
+
+  // First sign-in after email confirmation: the profile row could not be
+  // written at signup time (no session yet), so create it now.
+  if (!pharma && !pharmi) {
+    await ensureProfile(user);
+    ({ data: pharma } = await sb.from('pharmacies').select('*').eq('id', user.id).maybeSingle());
+    ({ data: pharmi } = await sb.from('pharmacist_profiles').select('*').eq('id', user.id).maybeSingle());
+  }
+
   if (pharma) { currentRole = 'pharmacy'; currentProfile = pharma; }
   else if (pharmi) { currentRole = 'pharmacist'; currentProfile = pharmi; }
   else { currentRole = 'pharmacist'; currentProfile = { full_name: user.email }; }
