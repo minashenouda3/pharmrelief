@@ -94,6 +94,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
 .badge-open{background:#E8F5E9;color:#1B5E20}
 .badge-pending{background:var(--amber-light);color:var(--amber)}
 .badge-locked{background:var(--teal-light);color:var(--teal-dark)}
+.badge-agency{background:#eef2ff;color:#4338ca;font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
 .badge-cancelled{background:var(--danger-light);color:var(--danger)}
 .badge-applied{background:#E3F2FD;color:#0D47A1}
 
@@ -153,6 +154,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
     <div id="loginForm">
       <div class="auth-role-tabs">
         <button class="role-tab active" onclick="setRole(this,'pharmacy')">🏥 Pharmacy</button>
+        <button class="role-tab" onclick="setRole(this,'agency')">🤝 Agency</button>
         <button class="role-tab" onclick="setRole(this,'pharmacist')">💊 Pharmacist</button>
       </div>
       <div class="auth-error" id="loginError"></div>
@@ -171,6 +173,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
     <div id="signupForm" style="display:none">
       <div class="auth-role-tabs">
         <button class="role-tab active" onclick="setRole(this,'pharmacy')">🏥 Pharmacy</button>
+        <button class="role-tab" onclick="setRole(this,'agency')">🤝 Agency</button>
         <button class="role-tab" onclick="setRole(this,'pharmacist')">💊 Pharmacist</button>
       </div>
       <div class="auth-error" id="signupError"></div>
@@ -187,6 +190,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
         <div class="auth-field">
           <label>City / Location</label>
           <input class="auth-input" id="pharmacyCity" placeholder="e.g. Toronto, ON" />
+        </div>
+      </div>
+      <div id="agencyFields" style="display:none">
+        <div class="auth-field">
+          <label>Agency Name</label>
+          <input class="auth-input" id="agencyName" placeholder="e.g. Maple Relief Staffing" />
+        </div>
+        <div class="auth-field">
+          <label>City / Location</label>
+          <input class="auth-input" id="agencyCity" placeholder="e.g. Toronto, ON" />
         </div>
       </div>
       <div id="pharmacistFields" style="display:none">
@@ -247,6 +260,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
             <div class="form-field">
               <label class="form-label">Hourly Rate ($/hr)</label>
               <input class="form-input" id="shiftRate" type="number" placeholder="e.g. 65" min="0" />
+            </div>
+            <div class="form-field full" id="clientPharmacyField" style="display:none">
+              <label class="form-label">Pharmacy this shift is for</label>
+              <input class="form-input" id="clientPharmacyName" placeholder="e.g. Acacia Pharmacy, Mississauga" />
             </div>
             <div class="form-field full">
               <label class="form-label">Location / Address</label>
@@ -315,10 +332,10 @@ function setRole(btn, role) {
   currentRole = role;
   btn.closest('.auth-role-tabs').querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  if (document.getElementById('pharmacyFields')) {
-    document.getElementById('pharmacyFields').style.display = role==='pharmacy' ? 'block' : 'none';
-    document.getElementById('pharmacistFields').style.display = role==='pharmacist' ? 'block' : 'none';
-  }
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? 'block' : 'none'; };
+  show('pharmacyFields', role === 'pharmacy');
+  show('agencyFields', role === 'agency');
+  show('pharmacistFields', role === 'pharmacist');
 }
 
 async function login() {
@@ -345,6 +362,9 @@ async function signup() {
   if (role === 'pharmacy') {
     meta.pharmacy_name = document.getElementById('pharmacyName').value.trim();
     meta.pharmacy_city = document.getElementById('pharmacyCity').value.trim();
+  } else if (role === 'agency') {
+    meta.pharmacy_name = document.getElementById('agencyName').value.trim();
+    meta.pharmacy_city = document.getElementById('agencyCity').value.trim();
   } else {
     meta.full_name = document.getElementById('pharmacistName').value.trim();
     meta.ocp_number = document.getElementById('ocpNumber').value.trim();
@@ -389,12 +409,13 @@ async function signup() {
 async function ensureProfile(user) {
   const m = user.user_metadata || {};
   if (!m.role) return null; // nothing recorded at signup; nothing to create
-  if (m.role === 'pharmacy') {
+  if (m.role === 'pharmacy' || m.role === 'agency') {
     const { error } = await sb.from('pharmacies').upsert({
       id: user.id,
       name: m.pharmacy_name || user.email,
       city: m.pharmacy_city || '',
-      email: user.email
+      email: user.email,
+      account_type: m.role
     });
     return error ? error.message : null;
   }
@@ -435,7 +456,7 @@ async function loadUserSession(user) {
     ({ data: pharmi } = await sb.from('pharmacist_profiles').select('*').eq('id', user.id).maybeSingle());
   }
 
-  if (pharma) { currentRole = 'pharmacy'; currentProfile = pharma; }
+  if (pharma) { currentRole = pharma.account_type === 'agency' ? 'agency' : 'pharmacy'; currentProfile = pharma; }
   else if (pharmi) { currentRole = 'pharmacist'; currentProfile = pharmi; }
   else { currentRole = 'pharmacist'; currentProfile = { full_name: user.email }; }
   showApp();
@@ -464,15 +485,34 @@ function showAuthMsg(id, msg) {
 function showApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('appShell').classList.add('visible');
-  const name = currentRole === 'pharmacy' ? currentProfile?.name : currentProfile?.full_name;
+  const name = isPoster() ? currentProfile?.name : currentProfile?.full_name;
   document.getElementById('userLabel').textContent = name || currentUser?.email;
-  document.getElementById('roleBadge').textContent = currentRole === 'pharmacy' ? '🏥 Pharmacy' : '💊 Pharmacist';
+  document.getElementById('roleBadge').textContent =
+    currentRole === 'pharmacy' ? '🏥 Pharmacy'
+    : currentRole === 'agency' ? '🤝 Agency'
+    : '💊 Pharmacist';
   buildTabs();
+}
+
+// Pharmacies and agencies share the shift-posting side of the portal.
+function isPoster() {
+  return currentRole === 'pharmacy' || currentRole === 'agency';
+}
+
+// Shows who a pharmacist would actually be working for. Agency-posted
+// shifts name the client pharmacy as well, so the pharmacist is never
+// guessing which site they are being booked into.
+function posterLabel(s) {
+  if (!s) return '';
+  if (s.client_pharmacy_name) {
+    return `${s.client_pharmacy_name} <span class="badge badge-agency">via ${s.pharmacy_name}</span>`;
+  }
+  return s.pharmacy_name || '';
 }
 
 function buildTabs() {
   const tabs = document.getElementById('appTabs');
-  if (currentRole === 'pharmacy') {
+  if (isPoster()) {
     tabs.innerHTML = `
       <button class="app-tab active" onclick="showTab('post-shift',this)">+ Post Shift</button>
       <button class="app-tab" onclick="showTab('my-shifts-pharmacy',this)">My Shifts</button>`;
@@ -495,6 +535,8 @@ function showTab(id, btn) {
   if (id === 'my-shifts-pharmacy') loadMyShiftsPharmacy();
   if (id === 'my-applications') loadMyApplications();
   if (id === 'my-confirmed') loadMyConfirmed();
+  const cpf = document.getElementById('clientPharmacyField');
+  if (cpf) cpf.style.display = (currentRole === 'agency') ? 'block' : 'none';
 }
 
 // ===== POST SHIFT =====
@@ -507,11 +549,17 @@ async function postShift() {
   const software = document.getElementById('shiftSoftware').value.trim();
   const notes = document.getElementById('shiftNotes').value.trim();
 
+  const clientPharmacy = (document.getElementById('clientPharmacyName')?.value || '').trim();
+
   if (!date || !start || !end || !rate || !location) { showToast('Please fill in date, times, rate and location.'); return; }
+  if (currentRole === 'agency' && !clientPharmacy) {
+    showToast('Please name the pharmacy this shift is for.'); return;
+  }
 
   const { error } = await sb.from('shifts').insert({
     pharmacy_id: currentUser.id,
-    pharmacy_name: currentProfile?.name || 'Unknown Pharmacy',
+    pharmacy_name: currentProfile?.name || 'Unknown',
+    client_pharmacy_name: currentRole === 'agency' ? clientPharmacy : null,
     shift_date: date,
     start_time: start,
     end_time: end,
@@ -531,6 +579,7 @@ async function postShift() {
   document.getElementById('shiftLocation').value = '';
   document.getElementById('shiftSoftware').value = '';
   document.getElementById('shiftNotes').value = '';
+  if (document.getElementById('clientPharmacyName')) document.getElementById('clientPharmacyName').value = '';
 }
 
 // ===== PHARMACY: MY SHIFTS =====
@@ -634,7 +683,7 @@ function renderBrowseShiftCard(s, alreadyApplied, isPreferred) {
     <div class="shift-card-top">
       <div>
         <div style="display:flex;align-items:center;gap:8px">
-          <div class="shift-pharmacy">${s.pharmacy_name}</div>
+          <div class="shift-pharmacy">${posterLabel(s)}</div>
           <button class="star-btn" onclick="togglePreferred('${s.pharmacy_id}', this)" title="${isPreferred?'Remove from preferred':'Add to preferred'}">${isPreferred?'⭐':'☆'}</button>
         </div>
         <div class="shift-date">${formatDate(s.shift_date)} · ${s.start_time}–${s.end_time}</div>
@@ -687,7 +736,7 @@ async function loadMyApplications() {
   const list = document.getElementById('myApplicationsList');
   list.innerHTML = '<div class="loader">Loading...</div>';
   const { data, error } = await sb.from('shift_applications')
-    .select('*, shifts(pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software)')
+    .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software)')
     .eq('pharmacist_id', currentUser.id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
@@ -699,7 +748,7 @@ async function loadMyApplications() {
     return `<div class="shift-card">
       <div class="shift-card-top">
         <div>
-          <div class="shift-pharmacy">${s?.pharmacy_name}</div>
+          <div class="shift-pharmacy">${posterLabel(s)}</div>
           <div class="shift-date">${formatDate(s?.shift_date)} · ${s?.start_time}–${s?.end_time}</div>
         </div>
         <span class="shift-rate">$${s?.hourly_rate}/hr</span>
@@ -721,7 +770,7 @@ async function loadMyConfirmed() {
   const list = document.getElementById('myConfirmedList');
   list.innerHTML = '<div class="loader">Loading...</div>';
   const { data, error } = await sb.from('shift_applications')
-    .select('*, shifts(pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software, notes)')
+    .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software, notes)')
     .eq('pharmacist_id', currentUser.id)
     .eq('pharmacy_confirmed', true)
     .eq('pharmacist_confirmed', true)
@@ -736,7 +785,7 @@ async function loadMyConfirmed() {
         <span class="badge badge-locked">🔒 Confirmed</span>
         <span class="shift-rate">$${s?.hourly_rate}/hr</span>
       </div>
-      <div class="shift-pharmacy">${s?.pharmacy_name}</div>
+      <div class="shift-pharmacy">${posterLabel(s)}</div>
       <div class="shift-date">${formatDate(s?.shift_date)} · ${s?.start_time}–${s?.end_time}</div>
       <div class="shift-meta">
         <span class="shift-meta-item">📍 ${s?.location}</span>
