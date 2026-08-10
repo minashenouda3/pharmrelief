@@ -204,6 +204,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
         <input class="auth-input" id="signupPassword" type="password" placeholder="Min 8 characters" />
       </div>
       <button class="auth-btn" onclick="signup()">Create account</button>
+      <div style="text-align:center;margin-top:10px">
+        <a href="#" onclick="resendConfirmation();return false;" style="font-size:13px;color:#0d9488;text-decoration:none">Resend confirmation email</a>
+      </div>
     </div>
   </div>
 </div>
@@ -365,6 +368,18 @@ async function signup() {
     const err = await ensureProfile(data.user);
     if (err) { showAuthError('signupError', 'Profile setup failed: ' + err); return; }
   }
+  // Supabase returns no error when the address already has a pending user
+  // (deliberate, so signups can't be used to enumerate registered emails).
+  // The tell is an empty identities array — no confirmation email is sent
+  // in that case, so say so instead of claiming the account was created.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    showAuthError('signupError',
+      'An account with this email already exists but has not been verified. ' +
+      'Please check your inbox (and spam folder) for the original confirmation email, ' +
+      'or use "Resend confirmation" below.');
+    return;
+  }
+
   showAuthMsg('signupMsg', 'Account created! Check your email to verify, then sign in.');
 }
 
@@ -391,6 +406,20 @@ async function ensureProfile(user) {
     ocp_verified: false
   });
   return error ? error.message : null;
+}
+
+async function resendConfirmation() {
+  const email = document.getElementById('signupEmail').value.trim();
+  document.getElementById('signupError').style.display = 'none';
+  document.getElementById('signupMsg').style.display = 'none';
+  if (!email) { showAuthError('signupError', 'Enter your email address above first.'); return; }
+  const { error } = await sb.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: 'https://pharmrelief.ca/pharmrelief_booking.html' }
+  });
+  if (error) { showAuthError('signupError', error.message); return; }
+  showAuthMsg('signupMsg', 'Confirmation email sent. Check your inbox and spam folder.');
 }
 
 async function loadUserSession(user) {
