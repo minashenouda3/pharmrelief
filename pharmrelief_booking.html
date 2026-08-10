@@ -558,10 +558,12 @@ function renderPharmacyShiftCard(s) {
 }
 
 async function pharmacyConfirm(appId) {
-  const { error } = await sb.from('shift_applications').update({ pharmacy_confirmed: true, status: 'pharmacy_confirmed' }).eq('id', appId);
+  const { error } = await sb.from('shift_applications').update({ pharmacy_confirmed: true }).eq('id', appId);
   if (error) { showToast('Error: ' + error.message); return; }
-  await checkLockShift(appId);
-  showToast('✓ You confirmed this pharmacist. Waiting for pharmacist confirmation.');
+  const locked = await checkLockShift(appId);
+  showToast(locked
+    ? '🔒 Both parties confirmed — shift locked!'
+    : '✓ You confirmed this pharmacist. Waiting for pharmacist confirmation.');
   loadMyShiftsPharmacy();
 }
 
@@ -717,18 +719,33 @@ async function loadMyConfirmed() {
 }
 
 async function pharmacistConfirm(appId) {
-  const { error } = await sb.from('shift_applications').update({ pharmacist_confirmed: true, status: 'both_confirmed' }).eq('id', appId);
+  const { error } = await sb.from('shift_applications').update({ pharmacist_confirmed: true }).eq('id', appId);
   if (error) { showToast('Error: ' + error.message); return; }
-  await checkLockShift(appId);
-  showToast('🔒 Shift confirmed and locked!');
+  const locked = await checkLockShift(appId);
+  showToast(locked
+    ? '🔒 Shift confirmed and locked!'
+    : '✓ You confirmed. Waiting for the pharmacy to confirm.');
   loadMyApplications();
 }
 
+// Recomputes status from the two confirmation flags — never assume the
+// other party's state — and locks the shift once both have confirmed.
+// Returns true if the shift is now locked.
 async function checkLockShift(appId) {
-  const { data } = await sb.from('shift_applications').select('*').eq('id', appId).single();
-  if (data?.pharmacy_confirmed && data?.pharmacist_confirmed) {
+  const { data } = await sb.from('shift_applications').select('*').eq('id', appId).maybeSingle();
+  if (!data) return false;
+  const both = !!(data.pharmacy_confirmed && data.pharmacist_confirmed);
+  const status = both ? 'both_confirmed'
+    : data.pharmacy_confirmed ? 'pharmacy_confirmed'
+    : data.pharmacist_confirmed ? 'pharmacist_confirmed'
+    : 'applied';
+  if (data.status !== status) {
+    await sb.from('shift_applications').update({ status }).eq('id', appId);
+  }
+  if (both) {
     await sb.from('shifts').update({ status: 'locked' }).eq('id', data.shift_id);
   }
+  return both;
 }
 
 // ===== UTILS =====
