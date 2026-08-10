@@ -212,6 +212,38 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
       <button class="auth-btn" id="resetBtn" onclick="applyReset()">Update password</button>
     </div>
 
+    <div id="roleSetupForm" style="display:none">
+      <div class="auth-error" id="roleSetupError"></div>
+      <p class="auth-hint">One more step — tell us what kind of account this is. This is set once and determines what you can do on the platform.</p>
+      <div class="auth-role-tabs">
+        <button class="role-tab active" onclick="setSetupRole(this,'pharmacy')">🏥 Pharmacy</button>
+        <button class="role-tab" onclick="setSetupRole(this,'agency')">🤝 Agency</button>
+        <button class="role-tab" onclick="setSetupRole(this,'pharmacist')">💊 Pharmacist</button>
+      </div>
+      <div id="setupOrgFields">
+        <div class="auth-field">
+          <label id="setupOrgLabel">Pharmacy Name</label>
+          <input class="auth-input" id="setupOrgName" placeholder="e.g. Acacia Pharmacy" />
+        </div>
+        <div class="auth-field">
+          <label>City / Location</label>
+          <input class="auth-input" id="setupOrgCity" placeholder="e.g. Toronto, ON" />
+        </div>
+      </div>
+      <div id="setupPharmacistFields" style="display:none">
+        <div class="auth-field">
+          <label>Full Name</label>
+          <input class="auth-input" id="setupFullName" placeholder="e.g. Mina Shenouda" />
+        </div>
+        <div class="auth-field">
+          <label>OCP Registration Number</label>
+          <input class="auth-input" id="setupOcp" placeholder="e.g. OCP-123456" />
+        </div>
+      </div>
+      <button class="auth-btn" id="roleSetupBtn" onclick="saveRoleSetup()">Continue</button>
+      <div class="auth-links"><a href="#" onclick="logout();return false;">Sign out</a></div>
+    </div>
+
     <div id="signupForm" style="display:none">
       <div class="auth-role-tabs">
         <button class="role-tab active" onclick="setRole(this,'pharmacy')">🏥 Pharmacy</button>
@@ -447,11 +479,11 @@ async function withBusy(btnId, label, fn) {
 }
 
 function hideAuthPanels() {
-  ['loginForm', 'signupForm', 'forgotForm', 'resetForm'].forEach(id => {
+  ['loginForm', 'signupForm', 'forgotForm', 'resetForm', 'roleSetupForm'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  ['loginError','loginMsg','signupError','signupMsg','forgotError','forgotMsg','resetError','resetMsg']
+  ['loginError','loginMsg','signupError','signupMsg','forgotError','forgotMsg','resetError','resetMsg','roleSetupError']
     .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
 
@@ -529,21 +561,87 @@ function handleAuthHash() {
   return false;
 }
 
+
+let setupRole = 'pharmacy';
+
+function setSetupRole(btn, role) {
+  setupRole = role;
+  btn.closest('.auth-role-tabs').querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('setupOrgFields').style.display = role === 'pharmacist' ? 'none' : 'block';
+  document.getElementById('setupPharmacistFields').style.display = role === 'pharmacist' ? 'block' : 'none';
+  document.getElementById('setupOrgLabel').textContent = role === 'agency' ? 'Agency Name' : 'Pharmacy Name';
+}
+
+// Shown when a signed-in user has no profile row and no usable metadata.
+function promptRoleSetup(user) {
+  document.getElementById('appShell').classList.remove('visible');
+  document.getElementById('authScreen').style.display = 'flex';
+  hideAuthPanels();
+  const tabs = document.querySelector('.auth-tabs');
+  if (tabs) tabs.style.display = 'none';
+  document.getElementById('roleSetupForm').style.display = 'block';
+}
+
+async function saveRoleSetup() {
+  const err = document.getElementById('roleSetupError');
+  err.style.display = 'none';
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { showAuthError('roleSetupError', 'Your session expired. Please sign in again.'); return; }
+
+  await withBusy('roleSetupBtn', 'Saving...', async () => {
+    let error;
+    if (setupRole === 'pharmacist') {
+      const name = document.getElementById('setupFullName').value.trim();
+      const ocp = document.getElementById('setupOcp').value.trim();
+      if (!name) { showAuthError('roleSetupError', 'Please enter your full name.'); return; }
+      ({ error } = await sb.from('pharmacist_profiles').upsert({
+        id: user.id, full_name: name, ocp_number: ocp, email: user.email, ocp_verified: false
+      }));
+    } else {
+      const name = document.getElementById('setupOrgName').value.trim();
+      const city = document.getElementById('setupOrgCity').value.trim();
+      if (!name) { showAuthError('roleSetupError', 'Please enter a name.'); return; }
+      ({ error } = await sb.from('pharmacies').upsert({
+        id: user.id, name, city, email: user.email, account_type: setupRole
+      }));
+    }
+    if (error) { showAuthError('roleSetupError', friendlyAuthError(error.message)); return; }
+    document.getElementById('roleSetupForm').style.display = 'none';
+    const tabs = document.querySelector('.auth-tabs');
+    if (tabs) tabs.style.display = 'flex';
+    await loadUserSession(user);
+  });
+}
+
 function switchAuthTab(mode) {
   authMode = mode;
   document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&mode==='login')||(i===1&&mode==='signup')));
   document.getElementById('loginForm').style.display = mode==='login' ? 'block' : 'none';
   document.getElementById('signupForm').style.display = mode==='signup' ? 'block' : 'none';
+  // Re-sync the role selector to the variable. These previously drifted
+  // apart, letting a signup record a role the user never selected.
+  if (mode === 'signup') syncRoleTabs(currentRole);
 }
 
-function setRole(btn, role) {
+// Single source of truth for the selected role: sets the variable, the
+// highlighted tab and the visible fields together so they cannot diverge.
+function syncRoleTabs(role) {
   currentRole = role;
-  btn.closest('.auth-role-tabs').querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  const form = document.getElementById('signupForm');
+  if (!form) return;
+  form.querySelectorAll('.role-tab').forEach(b => {
+    const m = (b.getAttribute('onclick') || '').match(/setRole\(this,'([a-z]+)'\)/);
+    b.classList.toggle('active', !!m && m[1] === role);
+  });
   const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? 'block' : 'none'; };
   show('pharmacyFields', role === 'pharmacy');
   show('agencyFields', role === 'agency');
   show('pharmacistFields', role === 'pharmacist');
+}
+
+function setRole(btn, role) {
+  syncRoleTabs(role);
 }
 
 async function login() {
@@ -572,7 +670,11 @@ async function signup() {
   if (pw.length < 8) { showAuthError('signupError', 'Password must be at least 8 characters.'); return; }
   if (pw !== pw2) { showAuthError('signupError', 'The two passwords do not match.'); return; }
 
-  const role = currentRole;
+  // Read the role from the highlighted tab rather than the global, so what
+  // the user can see is what gets recorded.
+  const activeTab = document.querySelector('#signupForm .role-tab.active');
+  const m = activeTab && (activeTab.getAttribute('onclick') || '').match(/setRole\(this,'([a-z]+)'\)/);
+  const role = m ? m[1] : currentRole;
   const meta = { role };
   if (role === 'pharmacy') {
     meta.pharmacy_name = document.getElementById('pharmacyName').value.trim();
@@ -679,7 +781,14 @@ async function loadUserSession(user) {
 
   if (pharma) { currentRole = pharma.account_type === 'agency' ? 'agency' : 'pharmacy'; currentProfile = pharma; }
   else if (pharmi) { currentRole = 'pharmacist'; currentProfile = pharmi; }
-  else { currentRole = 'pharmacist'; currentProfile = { full_name: user.email }; }
+  else {
+    // No profile row and no signup metadata to rebuild one from (accounts
+    // created before roles were recorded). Ask rather than guess wrong.
+    currentRole = null;
+    currentProfile = null;
+    promptRoleSetup(user);
+    return;
+  }
   showApp();
 }
 
