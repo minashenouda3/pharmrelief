@@ -530,6 +530,21 @@ let authMode = 'login';
 
 // ===== AUTH =====
 
+// Escapes user-supplied text before it goes into innerHTML. Everything a
+// member can type — bios, comments, shift notes, business names, dispute
+// reasons — is rendered through this. Without it, a bio containing a
+// script tag executes in the browser of every member who views that
+// profile, with access to their session.
+function esc(v) {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ============================================================
 //  RATINGS
 // ============================================================
@@ -623,8 +638,12 @@ function ratingBadge(sum) {
 
 function avatarHtml(url, name, big) {
   const cls = big ? 'avatar avatar-lg' : 'avatar';
-  if (url) return `<img class="${cls}" src="${url}" alt="" />`;
-  const initial = (name || '?').trim().charAt(0).toUpperCase();
+  // Only allow URLs from our own storage bucket — a stored avatar_url is
+  // user-writable, so an unchecked value could carry a javascript: URI.
+  if (url && /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\//i.test(url)) {
+    return `<img class="${cls}" src="${esc(url)}" alt="" />`;
+  }
+  const initial = esc((name || '?').trim().charAt(0).toUpperCase());
   return `<div class="${cls} avatar-fallback">${initial}</div>`;
 }
 
@@ -683,11 +702,11 @@ async function loadProfile() {
     <div class="form-grid">
       <div class="form-field">
         <label class="form-label">Legal name (as registered with OCP)</label>
-        <input class="form-input" id="pfLegalName" value="${p.legal_name || ''}" placeholder="Must match your OCP registration" />
+        <input class="form-input" id="pfLegalName" value="${esc(p.legal_name)}" placeholder="Must match your OCP registration" />
       </div>
       <div class="form-field">
         <label class="form-label">OCP registration number</label>
-        <input class="form-input" id="pfOcp" value="${p.ocp_number || ''}" placeholder="e.g. 123456" />
+        <input class="form-input" id="pfOcp" value="${esc(p.ocp_number)}" placeholder="e.g. 123456" />
       </div>
       <div class="form-field">
         <label class="form-label">Years of experience</label>
@@ -695,11 +714,11 @@ async function loadProfile() {
       </div>
       <div class="form-field">
         <label class="form-label">Phone</label>
-        <input class="form-input" id="pfPhone" value="${p.phone || ''}" placeholder="(555) 555-5555" />
+        <input class="form-input" id="pfPhone" value="${esc(p.phone)}" placeholder="(555) 555-5555" />
       </div>
       <div class="form-field full">
         <label class="form-label">About you</label>
-        <textarea class="form-input" id="pfBio" rows="3" placeholder="Software you know, settings you have worked in, specialties">${p.bio || ''}</textarea>
+        <textarea class="form-input" id="pfBio" rows="3" placeholder="Software you know, settings you have worked in, specialties">${esc(p.bio)}</textarea>
       </div>
     </div>`;
 
@@ -707,19 +726,19 @@ async function loadProfile() {
     <div class="form-grid">
       <div class="form-field">
         <label class="form-label">${currentRole === 'agency' ? 'Agency' : 'Pharmacy'} name</label>
-        <input class="form-input" id="pfName" value="${p.name || ''}" />
+        <input class="form-input" id="pfName" value="${esc(p.name)}" />
       </div>
       <div class="form-field">
         <label class="form-label">City</label>
-        <input class="form-input" id="pfCity" value="${p.city || ''}" />
+        <input class="form-input" id="pfCity" value="${esc(p.city)}" />
       </div>
       <div class="form-field">
         <label class="form-label">Phone</label>
-        <input class="form-input" id="pfPhone" value="${p.phone || ''}" />
+        <input class="form-input" id="pfPhone" value="${esc(p.phone)}" />
       </div>
       <div class="form-field full">
         <label class="form-label">Address</label>
-        <input class="form-input" id="pfAddress" value="${p.address || ''}" />
+        <input class="form-input" id="pfAddress" value="${esc(p.address)}" />
       </div>
     </div>`;
 
@@ -736,7 +755,7 @@ async function loadProfile() {
         : p.verification_status === 'pending'
         ? `<p style="font-size:13px;color:#92400e;margin:0">Your submission is under review. This usually takes one business day.</p>`
         : `<button class="btn-primary" id="verifyBtn" onclick="submitVerification()">Submit for verification</button>`}
-      ${p.verification_note ? `<p style="font-size:13px;color:#991b1b;margin:10px 0 0">${p.verification_note}</p>` : ''}
+      ${p.verification_note ? `<p style="font-size:13px;color:#991b1b;margin:10px 0 0">${esc(p.verification_note)}</p>` : ''}
     </div>`;
 
   body.innerHTML = `
@@ -744,7 +763,7 @@ async function loadProfile() {
       <div class="profile-head">
         ${avatarHtml(p.avatar_url, name, true)}
         <div style="flex:1;min-width:200px">
-          <h2 style="margin:0 0 6px;font-size:20px">${name || currentUser.email}</h2>
+          <h2 style="margin:0 0 6px;font-size:20px">${esc(name || currentUser.email)}</h2>
           <div style="margin-bottom:8px">${ratingBadge(sum)}</div>
           <label class="btn-secondary" style="display:inline-block;cursor:pointer">
             Change photo
@@ -812,7 +831,7 @@ async function loadMyReviews() {
   el.innerHTML = data.map(r => `
     <div style="border-bottom:1px solid #e2e8f0;padding:12px 0">
       <div class="rating-stars-sm">${starString(r.score)}</div>
-      ${r.comment ? `<div style="font-size:14px;color:#334155;margin-top:5px">${r.comment}</div>` : ''}
+      ${r.comment ? `<div style="font-size:14px;color:#334155;margin-top:5px">${esc(r.comment)}</div>` : ''}
       <div style="font-size:12px;color:#94a3b8;margin-top:5px">${new Date(r.created_at).toLocaleDateString()}</div>
     </div>`).join('');
 }
@@ -934,7 +953,7 @@ async function loadEarnings() {
     return `<div class="shift-card">
       <div class="shift-card-head">
         <div>
-          <div class="shift-pharmacy">${s.client_pharmacy_name || s.pharmacy_name || ''}</div>
+          <div class="shift-pharmacy">${esc(s.client_pharmacy_name || s.pharmacy_name || '')}</div>
           <div class="shift-date">${s.shift_date || ''}</div>
         </div>
         <div style="text-align:right">
@@ -943,8 +962,8 @@ async function loadEarnings() {
         </div>
       </div>
       <div class="shift-meta">${w.hours_worked} hrs @ ${money(w.hourly_rate)}/hr${w.break_minutes ? ` · ${w.break_minutes} min break` : ''}</div>
-      ${w.dispute_reason ? `<div style="font-size:13px;color:#991b1b;margin-top:8px">Disputed: ${w.dispute_reason}</div>` : ''}
-      ${w.status === 'paid' && w.payment_reference ? `<div style="font-size:12px;color:#64748b;margin-top:6px">Ref: ${w.payment_reference}</div>` : ''}
+      ${w.dispute_reason ? `<div style="font-size:13px;color:#991b1b;margin-top:8px">Disputed: ${esc(w.dispute_reason)}</div>` : ''}
+      ${w.status === 'paid' && w.payment_reference ? `<div style="font-size:12px;color:#64748b;margin-top:6px">Ref: ${esc(w.payment_reference)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -984,7 +1003,7 @@ async function loadTimesheets() {
     return `<div class="shift-card">
       <div class="shift-card-head">
         <div>
-          <div class="shift-pharmacy">${s.client_pharmacy_name || s.pharmacy_name || ''}</div>
+          <div class="shift-pharmacy">${esc(s.client_pharmacy_name || s.pharmacy_name || '')}</div>
           <div class="shift-date">${s.shift_date || ''}</div>
         </div>
         <div style="text-align:right">
@@ -993,7 +1012,7 @@ async function loadTimesheets() {
         </div>
       </div>
       <div class="shift-meta">${w.hours_worked} hrs @ ${money(w.hourly_rate)}/hr${w.break_minutes ? ` · ${w.break_minutes} min break` : ''}</div>
-      ${w.notes ? `<div style="font-size:13px;color:#475569;margin-top:8px">${w.notes}</div>` : ''}
+      ${w.notes ? `<div style="font-size:13px;color:#475569;margin-top:8px">${esc(w.notes)}</div>` : ''}
       ${actions ? `<div style="display:flex;gap:8px;margin-top:12px">${actions}</div>` : ''}
     </div>`;
   }).join('');
@@ -1462,9 +1481,9 @@ function isPoster() {
 function posterLabel(s) {
   if (!s) return '';
   if (s.client_pharmacy_name) {
-    return `${s.client_pharmacy_name} <span class="badge badge-agency">via ${s.pharmacy_name}</span>`;
+    return `${esc(s.client_pharmacy_name)} <span class="badge badge-agency">via ${esc(s.pharmacy_name)}</span>`;
   }
-  return s.pharmacy_name || '';
+  return esc(s.pharmacy_name);
 }
 
 function buildTabs() {
@@ -1582,17 +1601,17 @@ function renderPharmacyShiftCard(s) {
       ${avatarHtml(a.pharmacist_profiles?.avatar_url, a.pharmacist_profiles?.full_name)}
       <div style="flex:1;min-width:150px">
         <div style="font-size:13px;font-weight:500">
-          ${a.pharmacist_profiles?.full_name || 'Pharmacist'}
+          ${esc(a.pharmacist_profiles?.full_name || 'Pharmacist')}
           ${a.pharmacist_profiles?.verification_status === 'verified' ? '<span class="verif-badge verif-verified">✓ Verified</span>' : ''}
         </div>
-        <div style="font-size:11px;color:var(--muted)">${a.pharmacist_profiles?.ocp_number || ''}${a.pharmacist_profiles?.years_experience ? ` · ${a.pharmacist_profiles.years_experience} yrs` : ''}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(a.pharmacist_profiles?.ocp_number || '')}${a.pharmacist_profiles?.years_experience ? ` · ${a.pharmacist_profiles.years_experience} yrs` : ''}</div>
         <div class="applicant-rating" data-uid="${a.pharmacist_profiles?.id || ''}"></div>
       </div>
       <div class="confirm-steps">
         <div class="confirm-step ${pharmaConfirmed?'step-done':'step-pending'}">${pharmaConfirmed?'✓ You confirmed':'Awaiting your confirm'}</div>
         <div class="confirm-step ${pharmiConfirmed?'step-done':'step-waiting'}">${pharmiConfirmed?'✓ Pharmacist confirmed':'Awaiting pharmacist'}</div>
       </div>
-      ${isLocked && shiftIsPast(s) ? `<button class="btn btn-secondary btn-sm" onclick="openRating('${s.id}','${a.pharmacist_profiles?.id}','${(a.pharmacist_profiles?.full_name || 'Pharmacist').replace(/'/g, "&#39;")}')">Rate pharmacist</button>` : ''}
+      ${isLocked && shiftIsPast(s) ? `<button class="btn btn-secondary btn-sm" onclick="openRating('${s.id}','${a.pharmacist_profiles?.id}','${esc(a.pharmacist_profiles?.full_name || 'Pharmacist')}')">Rate pharmacist</button>` : ''}
       ${!pharmaConfirmed ? `<button class="btn btn-primary btn-sm" onclick="pharmacyConfirm('${a.id}')">Confirm</button>` : ''}
       ${isLocked ? '<span class="badge badge-locked">🔒 Shift Locked</span>' : ''}
     </div>`;
@@ -1602,15 +1621,15 @@ function renderPharmacyShiftCard(s) {
     <div class="shift-card-top">
       <div>
         <div class="shift-date">${formatDate(s.shift_date)} · ${s.start_time}–${s.end_time}</div>
-        <div class="shift-pharmacy" style="margin-top:2px">${s.location}</div>
+        <div class="shift-pharmacy" style="margin-top:2px">${esc(s.location)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         ${statusBadge}
         <span class="shift-rate">$${s.hourly_rate}/hr</span>
       </div>
     </div>
-    ${s.software ? `<div class="shift-meta"><span class="shift-meta-item">💻 ${s.software}</span></div>` : ''}
-    ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${s.notes}</div>` : ''}
+    ${s.software ? `<div class="shift-meta"><span class="shift-meta-item">💻 ${esc(s.software)}</span></div>` : ''}
+    ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${esc(s.notes)}</div>` : ''}
     ${appsList}
     ${!confirmed && s.status !== 'locked' ? `<div style="margin-top:10px"><button class="btn btn-secondary btn-sm" onclick="cancelShift('${s.id}')">Cancel shift</button></div>` : ''}
   </div>`;
@@ -1672,10 +1691,10 @@ function renderBrowseShiftCard(s, alreadyApplied, isPreferred) {
       <span class="shift-rate">$${s.hourly_rate}/hr</span>
     </div>
     <div class="shift-meta">
-      <span class="shift-meta-item">📍 ${s.location}</span>
-      ${s.software ? `<span class="shift-meta-item">💻 ${s.software}</span>` : ''}
+      <span class="shift-meta-item">📍 ${esc(s.location)}</span>
+      ${s.software ? `<span class="shift-meta-item">💻 ${esc(s.software)}</span>` : ''}
     </div>
-    ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin:8px 0">${s.notes}</div>` : ''}
+    ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin:8px 0">${esc(s.notes)}</div>` : ''}
     <div class="shift-actions">
       ${alreadyApplied
         ? '<span class="badge badge-applied">✓ Applied</span>'
@@ -1734,7 +1753,7 @@ async function loadMyApplications() {
         </div>
         <span class="shift-rate">$${s?.hourly_rate}/hr</span>
       </div>
-      <div class="shift-meta"><span class="shift-meta-item">📍 ${s?.location}</span></div>
+      <div class="shift-meta"><span class="shift-meta-item">📍 ${esc(s?.location)}</span></div>
       <div class="confirm-steps">
         <div class="confirm-step ${a.pharmacy_confirmed?'step-done':'step-pending'}">${a.pharmacy_confirmed?'✓ Pharmacy confirmed':'Awaiting pharmacy'}</div>
         <div class="confirm-step ${a.pharmacist_confirmed?'step-done':'step-waiting'}">${a.pharmacist_confirmed?'✓ You confirmed':'Your confirmation needed'}</div>
@@ -1769,13 +1788,13 @@ async function loadMyConfirmed() {
       <div class="shift-pharmacy">${posterLabel(s)}</div>
       <div class="shift-date">${formatDate(s?.shift_date)} · ${s?.start_time}–${s?.end_time}</div>
       <div class="shift-meta">
-        <span class="shift-meta-item">📍 ${s?.location}</span>
-        ${s?.software ? `<span class="shift-meta-item">💻 ${s?.software}</span>` : ''}
+        <span class="shift-meta-item">📍 ${esc(s?.location)}</span>
+        ${s?.software ? `<span class="shift-meta-item">💻 ${esc(s?.software)}</span>` : ''}
       </div>
-      ${s?.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">${s.notes}</div>` : ''}
+      ${s?.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">${esc(s.notes)}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
         ${shiftIsPast(s) ? `<button class="btn-primary" onclick='openWorklog(${JSON.stringify(s).replace(/'/g, "&#39;")})'>Submit hours</button>` : ''}
-        ${shiftIsPast(s) ? `<button class="btn-secondary" onclick="openRating('${s?.id}','${s?.pharmacy_id}','${(s?.pharmacy_name || '').replace(/'/g, "&#39;")}')">Rate pharmacy</button>` : ''}
+        ${shiftIsPast(s) ? `<button class="btn-secondary" onclick="openRating('${s?.id}','${s?.pharmacy_id}','${esc(s?.pharmacy_name)}')">Rate pharmacy</button>` : ''}
       </div>
     </div>`;
   }).join('');
