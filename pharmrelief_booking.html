@@ -94,6 +94,48 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
 .badge-open{background:#E8F5E9;color:#1B5E20}
 .badge-pending{background:var(--amber-light);color:var(--amber)}
 .badge-locked{background:var(--teal-light);color:var(--teal-dark)}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:26px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.modal-title{margin:0 0 6px;font-size:19px;color:#0f172a}
+.modal-sub{margin:0 0 18px;font-size:13px;color:#64748b}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.btn-primary{background:#0d9488;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
+.btn-primary[disabled]{opacity:.6;cursor:not-allowed}
+.btn-secondary{background:#f1f5f9;color:#475569;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
+.rate-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.rate-row label{font-size:14px;color:#334155;font-weight:500}
+.stars{display:flex;gap:4px}
+.star{font-size:26px;line-height:1;cursor:pointer;color:#cbd5e1;transition:color .12s;background:none;border:none;padding:0}
+.star.on{color:#f59e0b}
+.rating-display{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#475569}
+.rating-stars-sm{color:#f59e0b;letter-spacing:1px}
+.rating-none{font-size:12px;color:#94a3b8;font-style:italic}
+.avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#e2e8f0;flex-shrink:0}
+.avatar-lg{width:88px;height:88px;border-radius:50%;object-fit:cover;background:#e2e8f0}
+.avatar-fallback{display:flex;align-items:center;justify-content:center;background:#0d9488;color:#fff;font-weight:600;font-size:20px}
+.profile-head{display:flex;gap:20px;align-items:center;margin-bottom:24px;flex-wrap:wrap}
+.profile-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:18px}
+.verif-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:11px}
+.verif-verified{background:#d1fae5;color:#065f46}
+.verif-pending{background:#fef3c7;color:#92400e}
+.verif-unverified{background:#f1f5f9;color:#64748b}
+.verif-rejected{background:#fee2e2;color:#991b1b}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.section-title{margin:0;font-size:18px;color:#0f172a}
+.fin-summary{display:flex;gap:18px;flex-wrap:wrap}
+.fin-stat{text-align:right}
+.fin-stat-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px}
+.fin-stat-value{font-size:18px;font-weight:700;color:#0f172a}
+.wl-calc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin:14px 0;font-size:14px;color:#334155;text-align:center}
+.wl-calc strong{color:#0d9488;font-size:17px}
+.status-pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:11px}
+.st-draft{background:#f1f5f9;color:#64748b}
+.st-submitted{background:#dbeafe;color:#1e40af}
+.st-approved{background:#d1fae5;color:#065f46}
+.st-disputed{background:#fee2e2;color:#991b1b}
+.st-paid{background:#0d9488;color:#fff}
+.upload-hint{font-size:12px;color:#64748b;margin-top:6px}
 .pw-wrap{position:relative}
 .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#0d9488;font-size:12px;font-weight:600;cursor:pointer;padding:4px}
 .auth-links{display:flex;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
@@ -388,6 +430,89 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
     <div class="tab-panel" id="panel-my-confirmed">
       <div id="myConfirmedList"><div class="loader">Loading confirmed shifts...</div></div>
     </div>
+
+    <div class="tab-panel" id="panel-timesheets">
+      <div class="section-head">
+        <h2 class="section-title">Timesheets &amp; Payments</h2>
+        <div class="fin-summary" id="finSummaryPharmacy"></div>
+      </div>
+      <div id="timesheetList"><div class="loader">Loading timesheets...</div></div>
+    </div>
+
+    <div class="tab-panel" id="panel-earnings">
+      <div class="section-head">
+        <h2 class="section-title">My Earnings</h2>
+        <div class="fin-summary" id="finSummaryPharmacist"></div>
+      </div>
+      <div id="earningsList"><div class="loader">Loading earnings...</div></div>
+    </div>
+
+    <div class="tab-panel" id="panel-profile">
+      <div id="profileBody"><div class="loader">Loading profile...</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="ratingModal">
+  <div class="modal">
+    <h3 class="modal-title" id="ratingModalTitle">Rate this shift</h3>
+    <p class="modal-sub" id="ratingModalSub"></p>
+    <div class="rate-row">
+      <label>Overall</label>
+      <div class="stars" id="starsOverall"></div>
+    </div>
+    <div class="rate-row">
+      <label>Reliability</label>
+      <div class="stars" id="starsReliability"></div>
+    </div>
+    <div class="rate-row">
+      <label>Professionalism</label>
+      <div class="stars" id="starsProfessionalism"></div>
+    </div>
+    <div class="auth-field">
+      <label>Comment (optional)</label>
+      <textarea class="form-input" id="ratingComment" rows="3" placeholder="How did the shift go?"></textarea>
+    </div>
+    <div class="auth-error" id="ratingError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeRating()">Cancel</button>
+      <button class="btn-primary" id="ratingSubmitBtn" onclick="submitRating()">Submit rating</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="worklogModal">
+  <div class="modal">
+    <h3 class="modal-title">Submit hours</h3>
+    <p class="modal-sub" id="worklogSub"></p>
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="form-label">Start time</label>
+        <input class="form-input" id="wlStart" type="time" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">End time</label>
+        <input class="form-input" id="wlEnd" type="time" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Unpaid break (minutes)</label>
+        <input class="form-input" id="wlBreak" type="number" min="0" step="5" value="0" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Hourly rate ($)</label>
+        <input class="form-input" id="wlRate" type="number" step="0.01" readonly />
+      </div>
+    </div>
+    <div class="wl-calc" id="wlCalc">Enter times to calculate</div>
+    <div class="auth-field">
+      <label>Notes (optional)</label>
+      <textarea class="form-input" id="wlNotes" rows="2" placeholder="Anything the pharmacy should know"></textarea>
+    </div>
+    <div class="auth-error" id="worklogError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeWorklog()">Cancel</button>
+      <button class="btn-primary" id="worklogSubmitBtn" onclick="submitWorklog()">Submit for approval</button>
+    </div>
   </div>
 </div>
 
@@ -404,6 +529,508 @@ let currentProfile = null;
 let authMode = 'login';
 
 // ===== AUTH =====
+
+// ============================================================
+//  RATINGS
+// ============================================================
+
+let ratingCtx = null;
+const ratingValues = { score: 0, reliability: 0, professionalism: 0 };
+
+function renderStars(containerId, key) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = [1,2,3,4,5].map(n =>
+    `<button type="button" class="star${n <= ratingValues[key] ? ' on' : ''}" data-n="${n}"
+      aria-label="${n} star${n>1?'s':''}">&#9733;</button>`).join('');
+  el.querySelectorAll('.star').forEach(b => {
+    b.onclick = () => { ratingValues[key] = parseInt(b.dataset.n, 10); renderStars(containerId, key); };
+  });
+}
+
+function starString(avg) {
+  if (avg == null) return '';
+  const full = Math.round(avg);
+  return '★'.repeat(full) + '☆'.repeat(5 - full);
+}
+
+// Ratings are only meaningful after a shift has actually happened, so the
+// button is gated on a locked shift whose date has passed.
+function canRate(shift) {
+  if (!shift || shift.status !== 'locked') return false;
+  return new Date(shift.shift_date) <= new Date();
+}
+
+function openRating(shiftId, rateeId, rateeName) {
+  ratingCtx = { shiftId, rateeId, rateeName };
+  ratingValues.score = 0; ratingValues.reliability = 0; ratingValues.professionalism = 0;
+  document.getElementById('ratingModalSub').textContent = `Your feedback for ${rateeName}. Ratings are visible to other members.`;
+  document.getElementById('ratingComment').value = '';
+  document.getElementById('ratingError').style.display = 'none';
+  ['starsOverall','starsReliability','starsProfessionalism'].forEach((id,i) =>
+    renderStars(id, ['score','reliability','professionalism'][i]));
+  document.getElementById('ratingModal').classList.add('open');
+}
+
+function closeRating() {
+  document.getElementById('ratingModal').classList.remove('open');
+  ratingCtx = null;
+}
+
+async function submitRating() {
+  if (!ratingCtx) return;
+  const err = document.getElementById('ratingError');
+  err.style.display = 'none';
+  if (!ratingValues.score) { showAuthError('ratingError', 'Please give an overall star rating.'); return; }
+
+  await withBusy('ratingSubmitBtn', 'Submitting...', async () => {
+    const { error } = await sb.from('ratings').insert({
+      shift_id: ratingCtx.shiftId,
+      rater_id: currentUser.id,
+      ratee_id: ratingCtx.rateeId,
+      rater_role: currentRole,
+      score: ratingValues.score,
+      reliability: ratingValues.reliability || null,
+      professionalism: ratingValues.professionalism || null,
+      comment: document.getElementById('ratingComment').value.trim() || null
+    });
+    if (error) {
+      showAuthError('ratingError', error.message.includes('duplicate')
+        ? 'You have already rated this shift.'
+        : friendlyAuthError(error.message));
+      return;
+    }
+    closeRating();
+    showToast('Thanks — your rating has been recorded.');
+    if (isPoster()) loadMyShiftsPharmacy(); else loadMyConfirmed();
+  });
+}
+
+async function getRatingSummary(userId) {
+  const { data } = await sb.from('rating_summary').select('*').eq('ratee_id', userId).maybeSingle();
+  return data;
+}
+
+function ratingBadge(sum) {
+  if (!sum || !sum.rating_count) return '<span class="rating-none">No ratings yet</span>';
+  return `<span class="rating-display"><span class="rating-stars-sm">${starString(sum.avg_score)}</span>
+    ${Number(sum.avg_score).toFixed(1)} <span style="color:#94a3b8">(${sum.rating_count})</span></span>`;
+}
+
+// ============================================================
+//  AVATAR UPLOAD
+// ============================================================
+
+function avatarHtml(url, name, big) {
+  const cls = big ? 'avatar avatar-lg' : 'avatar';
+  if (url) return `<img class="${cls}" src="${url}" alt="" />`;
+  const initial = (name || '?').trim().charAt(0).toUpperCase();
+  return `<div class="${cls} avatar-fallback">${initial}</div>`;
+}
+
+async function uploadAvatar(file) {
+  if (!file) return;
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+    showToast('Please choose a JPG, PNG or WebP image.'); return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    showToast('Image must be under 3 MB.'); return;
+  }
+  showToast('Uploading photo...');
+  const ext = file.name.split('.').pop().toLowerCase();
+  // Folder must be the user's uid — storage RLS enforces this.
+  const path = `${currentUser.id}/avatar.${ext}`;
+  const { error: upErr } = await sb.storage.from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (upErr) { showToast('Upload failed: ' + upErr.message); return; }
+
+  const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
+  // Cache-bust so the new image shows immediately.
+  const url = pub.publicUrl + '?v=' + Date.now();
+  const table = isPoster() ? 'pharmacies' : 'pharmacist_profiles';
+  const { error } = await sb.from(table).update({ avatar_url: url }).eq('id', currentUser.id);
+  if (error) { showToast('Could not save photo: ' + error.message); return; }
+  currentProfile.avatar_url = url;
+  showToast('Photo updated.');
+  loadProfile();
+}
+
+// ============================================================
+//  PROFILE + VERIFICATION
+// ============================================================
+
+function verifBadge(status) {
+  const map = {
+    verified:   ['verif-verified',   '✓ Verified'],
+    pending:    ['verif-pending',    '⏳ Verification pending'],
+    rejected:   ['verif-rejected',   '✕ Verification rejected'],
+    unverified: ['verif-unverified', 'Not verified']
+  };
+  const [cls, label] = map[status] || map.unverified;
+  return `<span class="verif-badge ${cls}">${label}</span>`;
+}
+
+async function loadProfile() {
+  const body = document.getElementById('profileBody');
+  const table = isPoster() ? 'pharmacies' : 'pharmacist_profiles';
+  const { data: p } = await sb.from(table).select('*').eq('id', currentUser.id).maybeSingle();
+  if (!p) { body.innerHTML = '<div class="empty">Profile not found.</div>'; return; }
+  currentProfile = p;
+  const sum = await getRatingSummary(currentUser.id);
+  const name = isPoster() ? p.name : p.full_name;
+
+  const pharmacistOnly = isPoster() ? '' : `
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="form-label">Legal name (as registered with OCP)</label>
+        <input class="form-input" id="pfLegalName" value="${p.legal_name || ''}" placeholder="Must match your OCP registration" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">OCP registration number</label>
+        <input class="form-input" id="pfOcp" value="${p.ocp_number || ''}" placeholder="e.g. 123456" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Years of experience</label>
+        <input class="form-input" id="pfYears" type="number" min="0" value="${p.years_experience ?? ''}" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="pfPhone" value="${p.phone || ''}" placeholder="(555) 555-5555" />
+      </div>
+      <div class="form-field full">
+        <label class="form-label">About you</label>
+        <textarea class="form-input" id="pfBio" rows="3" placeholder="Software you know, settings you have worked in, specialties">${p.bio || ''}</textarea>
+      </div>
+    </div>`;
+
+  const posterOnly = !isPoster() ? '' : `
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="form-label">${currentRole === 'agency' ? 'Agency' : 'Pharmacy'} name</label>
+        <input class="form-input" id="pfName" value="${p.name || ''}" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">City</label>
+        <input class="form-input" id="pfCity" value="${p.city || ''}" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="pfPhone" value="${p.phone || ''}" />
+      </div>
+      <div class="form-field full">
+        <label class="form-label">Address</label>
+        <input class="form-input" id="pfAddress" value="${p.address || ''}" />
+      </div>
+    </div>`;
+
+  const verifSection = isPoster() ? '' : `
+    <div class="profile-card">
+      <h3 style="margin:0 0 8px;font-size:16px">Professional verification ${verifBadge(p.verification_status)}</h3>
+      <p style="font-size:13px;color:#64748b;line-height:1.6;margin:0 0 14px">
+        PharmRelief verifies pharmacists against the Ontario College of Pharmacists public register.
+        Enter your legal name exactly as it appears on your OCP registration, then submit for review.
+        We never ask for government ID or photographs of identity documents.
+      </p>
+      ${p.verification_status === 'verified'
+        ? `<p style="font-size:13px;color:#065f46;margin:0">Verified${p.verified_at ? ' on ' + new Date(p.verified_at).toLocaleDateString() : ''}. Pharmacies can see this badge on your applications.</p>`
+        : p.verification_status === 'pending'
+        ? `<p style="font-size:13px;color:#92400e;margin:0">Your submission is under review. This usually takes one business day.</p>`
+        : `<button class="btn-primary" id="verifyBtn" onclick="submitVerification()">Submit for verification</button>`}
+      ${p.verification_note ? `<p style="font-size:13px;color:#991b1b;margin:10px 0 0">${p.verification_note}</p>` : ''}
+    </div>`;
+
+  body.innerHTML = `
+    <div class="profile-card">
+      <div class="profile-head">
+        ${avatarHtml(p.avatar_url, name, true)}
+        <div style="flex:1;min-width:200px">
+          <h2 style="margin:0 0 6px;font-size:20px">${name || currentUser.email}</h2>
+          <div style="margin-bottom:8px">${ratingBadge(sum)}</div>
+          <label class="btn-secondary" style="display:inline-block;cursor:pointer">
+            Change photo
+            <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none"
+              onchange="uploadAvatar(this.files[0])" />
+          </label>
+          <div class="upload-hint">JPG, PNG or WebP, up to 3 MB.</div>
+        </div>
+      </div>
+      ${pharmacistOnly}${posterOnly}
+      <button class="btn-primary" id="profileSaveBtn" onclick="saveProfile()">Save changes</button>
+    </div>
+    ${verifSection}
+    <div class="profile-card">
+      <h3 style="margin:0 0 12px;font-size:16px">Reviews</h3>
+      <div id="myReviews"><div class="loader">Loading reviews...</div></div>
+    </div>`;
+
+  loadMyReviews();
+}
+
+async function saveProfile() {
+  const val = id => document.getElementById(id)?.value.trim() ?? null;
+  await withBusy('profileSaveBtn', 'Saving...', async () => {
+    let payload, table;
+    if (isPoster()) {
+      table = 'pharmacies';
+      payload = { name: val('pfName'), city: val('pfCity'), phone: val('pfPhone'), address: val('pfAddress') };
+    } else {
+      table = 'pharmacist_profiles';
+      const yrs = val('pfYears');
+      payload = {
+        legal_name: val('pfLegalName'), ocp_number: val('pfOcp'),
+        years_experience: yrs ? parseInt(yrs, 10) : null,
+        phone: val('pfPhone'), bio: val('pfBio')
+      };
+    }
+    const { error } = await sb.from(table).update(payload).eq('id', currentUser.id);
+    if (error) { showToast('Could not save: ' + error.message); return; }
+    showToast('Profile saved.');
+    loadProfile();
+  });
+}
+
+async function submitVerification() {
+  const legal = document.getElementById('pfLegalName')?.value.trim();
+  const ocp = document.getElementById('pfOcp')?.value.trim();
+  if (!legal || !ocp) { showToast('Enter your legal name and OCP number first, then save.'); return; }
+  await withBusy('verifyBtn', 'Submitting...', async () => {
+    const { error } = await sb.from('pharmacist_profiles').update({
+      legal_name: legal, ocp_number: ocp, verification_status: 'pending', verification_note: null
+    }).eq('id', currentUser.id);
+    if (error) { showToast('Could not submit: ' + error.message); return; }
+    showToast('Submitted for verification.');
+    loadProfile();
+  });
+}
+
+async function loadMyReviews() {
+  const el = document.getElementById('myReviews');
+  if (!el) return;
+  const { data } = await sb.from('ratings').select('*').eq('ratee_id', currentUser.id)
+    .order('created_at', { ascending: false }).limit(20);
+  if (!data || !data.length) { el.innerHTML = '<div class="rating-none">No reviews yet.</div>'; return; }
+  el.innerHTML = data.map(r => `
+    <div style="border-bottom:1px solid #e2e8f0;padding:12px 0">
+      <div class="rating-stars-sm">${starString(r.score)}</div>
+      ${r.comment ? `<div style="font-size:14px;color:#334155;margin-top:5px">${r.comment}</div>` : ''}
+      <div style="font-size:12px;color:#94a3b8;margin-top:5px">${new Date(r.created_at).toLocaleDateString()}</div>
+    </div>`).join('');
+}
+
+// ============================================================
+//  WORK LOG / PAYMENTS
+// ============================================================
+
+let worklogCtx = null;
+
+function money(n) {
+  return '$' + Number(n || 0).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Handles overnight shifts by rolling the end time onto the next day.
+function calcHours(start, end, breakMins) {
+  if (!start || !end) return null;
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let mins = (eh * 60 + em) - (sh * 60 + sm);
+  if (mins <= 0) mins += 24 * 60;
+  mins -= (parseInt(breakMins, 10) || 0);
+  if (mins <= 0) return null;
+  return Math.round((mins / 60) * 100) / 100;
+}
+
+function updateWorklogCalc() {
+  const h = calcHours(document.getElementById('wlStart').value,
+                      document.getElementById('wlEnd').value,
+                      document.getElementById('wlBreak').value);
+  const rate = parseFloat(document.getElementById('wlRate').value) || 0;
+  const el = document.getElementById('wlCalc');
+  if (h == null) { el.textContent = 'Enter valid start and end times'; return; }
+  el.innerHTML = `${h} hours &times; ${money(rate)}/hr = <strong>${money(h * rate)}</strong>`;
+}
+
+function openWorklog(shift) {
+  worklogCtx = shift;
+  document.getElementById('worklogSub').textContent =
+    `${shift.pharmacy_name} — ${shift.shift_date}`;
+  document.getElementById('wlStart').value = (shift.start_time || '').slice(0,5);
+  document.getElementById('wlEnd').value = (shift.end_time || '').slice(0,5);
+  document.getElementById('wlBreak').value = 0;
+  document.getElementById('wlRate').value = shift.hourly_rate || 0;
+  document.getElementById('wlNotes').value = '';
+  document.getElementById('worklogError').style.display = 'none';
+  ['wlStart','wlEnd','wlBreak'].forEach(id =>
+    document.getElementById(id).oninput = updateWorklogCalc);
+  updateWorklogCalc();
+  document.getElementById('worklogModal').classList.add('open');
+}
+
+function closeWorklog() {
+  document.getElementById('worklogModal').classList.remove('open');
+  worklogCtx = null;
+}
+
+async function submitWorklog() {
+  if (!worklogCtx) return;
+  const start = document.getElementById('wlStart').value;
+  const end = document.getElementById('wlEnd').value;
+  const brk = parseInt(document.getElementById('wlBreak').value, 10) || 0;
+  const rate = parseFloat(document.getElementById('wlRate').value) || 0;
+  const hours = calcHours(start, end, brk);
+  if (hours == null) { showAuthError('worklogError', 'Please enter valid start and end times.'); return; }
+  if (hours > 24) { showAuthError('worklogError', 'That is more than 24 hours — please check the times.'); return; }
+
+  await withBusy('worklogSubmitBtn', 'Submitting...', async () => {
+    const { error } = await sb.from('shift_worklogs').upsert({
+      shift_id: worklogCtx.id,
+      pharmacist_id: currentUser.id,
+      pharmacy_id: worklogCtx.pharmacy_id,
+      clock_in: `${worklogCtx.shift_date}T${start}:00`,
+      clock_out: `${worklogCtx.shift_date}T${end}:00`,
+      break_minutes: brk,
+      hours_worked: hours,
+      hourly_rate: rate,
+      gross_amount: Math.round(hours * rate * 100) / 100,
+      status: 'submitted',
+      submitted_at: new Date().toISOString(),
+      notes: document.getElementById('wlNotes').value.trim() || null
+    }, { onConflict: 'shift_id' });
+    if (error) { showAuthError('worklogError', friendlyAuthError(error.message)); return; }
+    closeWorklog();
+    showToast('Hours submitted for approval.');
+    loadEarnings();
+  });
+}
+
+function statusPill(s) {
+  return `<span class="status-pill st-${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</span>`;
+}
+
+async function loadEarnings() {
+  const el = document.getElementById('earningsList');
+  const { data, error } = await sb.from('shift_worklogs')
+    .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, location)')
+    .eq('pharmacist_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  if (error) { el.innerHTML = `<div class="empty">Could not load earnings: ${error.message}</div>`; return; }
+
+  const totals = { paid: 0, owed: 0, hours: 0 };
+  (data || []).forEach(w => {
+    totals.hours += Number(w.hours_worked || 0);
+    if (w.status === 'paid') totals.paid += Number(w.gross_amount || 0);
+    else if (w.status !== 'disputed') totals.owed += Number(w.gross_amount || 0);
+  });
+  document.getElementById('finSummaryPharmacist').innerHTML = `
+    <div class="fin-stat"><div class="fin-stat-label">Hours logged</div><div class="fin-stat-value">${totals.hours.toFixed(1)}</div></div>
+    <div class="fin-stat"><div class="fin-stat-label">Outstanding</div><div class="fin-stat-value">${money(totals.owed)}</div></div>
+    <div class="fin-stat"><div class="fin-stat-label">Paid to date</div><div class="fin-stat-value">${money(totals.paid)}</div></div>`;
+
+  if (!data || !data.length) {
+    el.innerHTML = '<div class="empty">No hours submitted yet. Once you complete a confirmed shift, submit your hours from the Confirmed Shifts tab.</div>';
+    return;
+  }
+  el.innerHTML = data.map(w => {
+    const s = w.shifts || {};
+    return `<div class="shift-card">
+      <div class="shift-card-head">
+        <div>
+          <div class="shift-pharmacy">${s.client_pharmacy_name || s.pharmacy_name || ''}</div>
+          <div class="shift-date">${s.shift_date || ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700;color:#0f172a">${money(w.gross_amount)}</div>
+          ${statusPill(w.status)}
+        </div>
+      </div>
+      <div class="shift-meta">${w.hours_worked} hrs @ ${money(w.hourly_rate)}/hr${w.break_minutes ? ` · ${w.break_minutes} min break` : ''}</div>
+      ${w.dispute_reason ? `<div style="font-size:13px;color:#991b1b;margin-top:8px">Disputed: ${w.dispute_reason}</div>` : ''}
+      ${w.status === 'paid' && w.payment_reference ? `<div style="font-size:12px;color:#64748b;margin-top:6px">Ref: ${w.payment_reference}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function loadTimesheets() {
+  const el = document.getElementById('timesheetList');
+  const { data, error } = await sb.from('shift_worklogs')
+    .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, location)')
+    .eq('pharmacy_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  if (error) { el.innerHTML = `<div class="empty">Could not load timesheets: ${error.message}</div>`; return; }
+
+  const totals = { pending: 0, approved: 0, paid: 0 };
+  (data || []).forEach(w => {
+    const amt = Number(w.gross_amount || 0);
+    if (w.status === 'submitted') totals.pending += amt;
+    else if (w.status === 'approved') totals.approved += amt;
+    else if (w.status === 'paid') totals.paid += amt;
+  });
+  document.getElementById('finSummaryPharmacy').innerHTML = `
+    <div class="fin-stat"><div class="fin-stat-label">Awaiting approval</div><div class="fin-stat-value">${money(totals.pending)}</div></div>
+    <div class="fin-stat"><div class="fin-stat-label">Approved, unpaid</div><div class="fin-stat-value">${money(totals.approved)}</div></div>
+    <div class="fin-stat"><div class="fin-stat-label">Paid</div><div class="fin-stat-value">${money(totals.paid)}</div></div>`;
+
+  if (!data || !data.length) {
+    el.innerHTML = '<div class="empty">No timesheets submitted yet.</div>';
+    return;
+  }
+  el.innerHTML = data.map(w => {
+    const s = w.shifts || {};
+    const actions = w.status === 'submitted'
+      ? `<button class="btn-primary" onclick="approveWorklog('${w.id}')">Approve</button>
+         <button class="btn-secondary" onclick="disputeWorklog('${w.id}')">Dispute</button>`
+      : w.status === 'approved'
+      ? `<button class="btn-primary" onclick="markPaid('${w.id}')">Mark as paid</button>`
+      : '';
+    return `<div class="shift-card">
+      <div class="shift-card-head">
+        <div>
+          <div class="shift-pharmacy">${s.client_pharmacy_name || s.pharmacy_name || ''}</div>
+          <div class="shift-date">${s.shift_date || ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700;color:#0f172a">${money(w.gross_amount)}</div>
+          ${statusPill(w.status)}
+        </div>
+      </div>
+      <div class="shift-meta">${w.hours_worked} hrs @ ${money(w.hourly_rate)}/hr${w.break_minutes ? ` · ${w.break_minutes} min break` : ''}</div>
+      ${w.notes ? `<div style="font-size:13px;color:#475569;margin-top:8px">${w.notes}</div>` : ''}
+      ${actions ? `<div style="display:flex;gap:8px;margin-top:12px">${actions}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function approveWorklog(id) {
+  const { error } = await sb.from('shift_worklogs').update({
+    status: 'approved', approved_at: new Date().toISOString(), approved_by: currentUser.id
+  }).eq('id', id);
+  if (error) { showToast('Could not approve: ' + error.message); return; }
+  showToast('Timesheet approved.');
+  loadTimesheets();
+}
+
+async function disputeWorklog(id) {
+  const reason = prompt('What is the discrepancy? The pharmacist will see this.');
+  if (reason === null) return;
+  if (!reason.trim()) { showToast('Please give a reason.'); return; }
+  const { error } = await sb.from('shift_worklogs').update({
+    status: 'disputed', dispute_reason: reason.trim()
+  }).eq('id', id);
+  if (error) { showToast('Could not save: ' + error.message); return; }
+  showToast('Marked as disputed.');
+  loadTimesheets();
+}
+
+// Records that payment happened elsewhere — PharmRelief does not move funds.
+async function markPaid(id) {
+  const ref = prompt('Payment reference (e-transfer number, cheque number, etc.) — optional:');
+  if (ref === null) return;
+  const { error } = await sb.from('shift_worklogs').update({
+    status: 'paid', paid_at: new Date().toISOString(), payment_reference: ref.trim() || null
+  }).eq('id', id);
+  if (error) { showToast('Could not save: ' + error.message); return; }
+  showToast('Marked as paid.');
+  loadTimesheets();
+}
 
 // ===== AUTH UI HELPERS =====
 
@@ -845,13 +1472,17 @@ function buildTabs() {
   if (isPoster()) {
     tabs.innerHTML = `
       <button class="app-tab active" onclick="showTab('post-shift',this)">+ Post Shift</button>
-      <button class="app-tab" onclick="showTab('my-shifts-pharmacy',this)">My Shifts</button>`;
+      <button class="app-tab" onclick="showTab('my-shifts-pharmacy',this)">My Shifts</button>
+      <button class="app-tab" onclick="showTab('timesheets',this)">Timesheets</button>
+      <button class="app-tab" onclick="showTab('profile',this)">Profile</button>`;
     showTab('post-shift');
   } else {
     tabs.innerHTML = `
       <button class="app-tab active" onclick="showTab('browse-shifts',this)">Browse Shifts</button>
       <button class="app-tab" onclick="showTab('my-applications',this)">My Applications</button>
-      <button class="app-tab" onclick="showTab('my-confirmed',this)">Confirmed Shifts</button>`;
+      <button class="app-tab" onclick="showTab('my-confirmed',this)">Confirmed Shifts</button>
+      <button class="app-tab" onclick="showTab('earnings',this)">Earnings</button>
+      <button class="app-tab" onclick="showTab('profile',this)">Profile</button>`;
     showTab('browse-shifts');
     loadBrowseShifts();
   }
@@ -863,6 +1494,9 @@ function showTab(id, btn) {
   document.getElementById('panel-' + id)?.classList.add('active');
   if (btn) btn.classList.add('active');
   if (id === 'my-shifts-pharmacy') loadMyShiftsPharmacy();
+  if (id === 'timesheets') loadTimesheets();
+  if (id === 'earnings') loadEarnings();
+  if (id === 'profile') loadProfile();
   if (id === 'my-applications') loadMyApplications();
   if (id === 'my-confirmed') loadMyConfirmed();
   const cpf = document.getElementById('clientPharmacyField');
@@ -916,9 +1550,20 @@ async function postShift() {
 async function loadMyShiftsPharmacy() {
   const list = document.getElementById('myShiftsPharmacyList');
   list.innerHTML = '<div class="loader">Loading...</div>';
-  const { data, error } = await sb.from('shifts').select('*, shift_applications(*, pharmacist_profiles(full_name, ocp_number))').eq('pharmacy_id', currentUser.id).order('shift_date', { ascending: false });
+  const { data, error } = await sb.from('shifts').select('*, shift_applications(*, pharmacist_profiles(id, full_name, ocp_number, avatar_url, verification_status, years_experience))').eq('pharmacy_id', currentUser.id).order('shift_date', { ascending: false });
   if (error || !data?.length) { list.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><h3>No shifts posted yet</h3><p>Post your first shift using the tab above.</p></div>'; return; }
   list.innerHTML = data.map(s => renderPharmacyShiftCard(s)).join('');
+  hydrateApplicantRatings();
+}
+
+// Ratings are fetched after render so one slow lookup cannot block the list.
+async function hydrateApplicantRatings() {
+  const nodes = [...document.querySelectorAll('.applicant-rating[data-uid]')].filter(n => n.dataset.uid);
+  const ids = [...new Set(nodes.map(n => n.dataset.uid))];
+  if (!ids.length) return;
+  const { data } = await sb.from('rating_summary').select('*').in('ratee_id', ids);
+  const byId = Object.fromEntries((data || []).map(r => [r.ratee_id, r]));
+  nodes.forEach(n => { n.innerHTML = ratingBadge(byId[n.dataset.uid]); });
 }
 
 function renderPharmacyShiftCard(s) {
@@ -934,14 +1579,20 @@ function renderPharmacyShiftCard(s) {
     const pharmiConfirmed = a.pharmacist_confirmed;
     const isLocked = pharmaConfirmed && pharmiConfirmed;
     return `<div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      ${avatarHtml(a.pharmacist_profiles?.avatar_url, a.pharmacist_profiles?.full_name)}
       <div style="flex:1;min-width:150px">
-        <div style="font-size:13px;font-weight:500">${a.pharmacist_profiles?.full_name || 'Pharmacist'}</div>
-        <div style="font-size:11px;color:var(--muted)">${a.pharmacist_profiles?.ocp_number || ''}</div>
+        <div style="font-size:13px;font-weight:500">
+          ${a.pharmacist_profiles?.full_name || 'Pharmacist'}
+          ${a.pharmacist_profiles?.verification_status === 'verified' ? '<span class="verif-badge verif-verified">✓ Verified</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:var(--muted)">${a.pharmacist_profiles?.ocp_number || ''}${a.pharmacist_profiles?.years_experience ? ` · ${a.pharmacist_profiles.years_experience} yrs` : ''}</div>
+        <div class="applicant-rating" data-uid="${a.pharmacist_profiles?.id || ''}"></div>
       </div>
       <div class="confirm-steps">
         <div class="confirm-step ${pharmaConfirmed?'step-done':'step-pending'}">${pharmaConfirmed?'✓ You confirmed':'Awaiting your confirm'}</div>
         <div class="confirm-step ${pharmiConfirmed?'step-done':'step-waiting'}">${pharmiConfirmed?'✓ Pharmacist confirmed':'Awaiting pharmacist'}</div>
       </div>
+      ${isLocked && shiftIsPast(s) ? `<button class="btn btn-secondary btn-sm" onclick="openRating('${s.id}','${a.pharmacist_profiles?.id}','${(a.pharmacist_profiles?.full_name || 'Pharmacist').replace(/'/g, "&#39;")}')">Rate pharmacist</button>` : ''}
       ${!pharmaConfirmed ? `<button class="btn btn-primary btn-sm" onclick="pharmacyConfirm('${a.id}')">Confirm</button>` : ''}
       ${isLocked ? '<span class="badge badge-locked">🔒 Shift Locked</span>' : ''}
     </div>`;
@@ -1100,7 +1751,7 @@ async function loadMyConfirmed() {
   const list = document.getElementById('myConfirmedList');
   list.innerHTML = '<div class="loader">Loading...</div>';
   const { data, error } = await sb.from('shift_applications')
-    .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software, notes)')
+    .select('*, shifts(id, pharmacy_id, pharmacy_name, client_pharmacy_name, shift_date, start_time, end_time, hourly_rate, location, software, notes, status)')
     .eq('pharmacist_id', currentUser.id)
     .eq('pharmacy_confirmed', true)
     .eq('pharmacist_confirmed', true)
@@ -1122,8 +1773,19 @@ async function loadMyConfirmed() {
         ${s?.software ? `<span class="shift-meta-item">💻 ${s?.software}</span>` : ''}
       </div>
       ${s?.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">${s.notes}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        ${shiftIsPast(s) ? `<button class="btn-primary" onclick='openWorklog(${JSON.stringify(s).replace(/'/g, "&#39;")})'>Submit hours</button>` : ''}
+        ${shiftIsPast(s) ? `<button class="btn-secondary" onclick="openRating('${s?.id}','${s?.pharmacy_id}','${(s?.pharmacy_name || '').replace(/'/g, "&#39;")}')">Rate pharmacy</button>` : ''}
+      </div>
     </div>`;
   }).join('');
+}
+
+// Hours and ratings only make sense once the shift date has passed.
+function shiftIsPast(s) {
+  if (!s || !s.shift_date) return false;
+  const d = new Date(s.shift_date + 'T23:59:59');
+  return d <= new Date();
 }
 
 async function pharmacistConfirm(appId) {
