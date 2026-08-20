@@ -259,6 +259,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--slate);li
 <div class="pf-toast" id="toast"></div>
 
 <script>
+// Escapes user-supplied text before it reaches innerHTML. Post titles,
+// bodies, usernames and community names are all member-controlled; without
+// this a crafted post executes script in every reader's browser.
+function esc(v){
+  if(v===null||v===undefined) return '';
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 const SUPABASE_URL = 'https://wnktrcqrwidapxcdnmpi.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indua3RyY3Fyd2lkYXB4Y2RubXBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzU0NzMsImV4cCI6MjA5OTUxMTQ3M30.waaWUDwb_UzOedlDfbMr1Hz3uSUcnZnpwZaSAjGWofU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -301,21 +310,21 @@ function renderPost(p){
   return `
   <div class="pf-post" data-id="${p.id}">
     <div class="pf-vote-col">
-      <button class="pf-vote-btn" onclick="vote('${p.id}',1,this)" title="Upvote">▲</button>
+      <button class="pf-vote-btn" onclick="vote('${esc(p.id)}',1,this)" title="Upvote">▲</button>
       <span class="pf-vote-count">${p.vote_count || 0}</span>
-      <button class="pf-vote-btn" onclick="vote('${p.id}',-1,this)" title="Downvote">▼</button>
+      <button class="pf-vote-btn" onclick="vote('${esc(p.id)}',-1,this)" title="Downvote">▼</button>
     </div>
     <div class="pf-post-content">
       <div class="pf-post-meta">
         ${flair}
         <span class="pf-community">r/${comm}</span>
-        <span class="pf-post-author">by <strong>${author}</strong> · ${timeAgo(p.created_at)}</span>
+        <span class="pf-post-author">by <strong>${esc(author)}</strong> · ${timeAgo(p.created_at)}</span>
       </div>
-      <div class="pf-post-title">${p.title}</div>
-      ${p.body ? `<div class="pf-post-preview">${p.body}</div>` : ''}
+      <div class="pf-post-title">${esc(p.title)}</div>
+      ${p.body ? `<div class="pf-post-preview">${esc(p.body)}</div>` : ''}
       <div class="pf-post-actions">
         <button class="pf-action">💬 ${p.comment_count || 0} comments</button>
-        <button class="pf-action" onclick="copyLink('${p.id}')">🔗 Share</button>
+        <button class="pf-action" onclick="copyLink('${esc(p.id)}')">🔗 Share</button>
         <button class="pf-action">🔖 Save</button>
       </div>
     </div>
@@ -376,14 +385,14 @@ async function loadCommunities(){
     <li class="pf-community-item">
       <div class="pf-community-icon" style="background:${colors[c.name]||'var(--teal-light)'}">${icons[c.name]||'💊'}</div>
       <div class="pf-community-info">
-        <div class="pf-community-name">r/${c.name}</div>
+        <div class="pf-community-name">r/${esc(c.name)}</div>
         <div class="pf-community-count">${(c.member_count||0).toLocaleString()} members</div>
       </div>
-      <button class="pf-join" onclick="joinCommunity(this,'${c.id||c.name}')">Join</button>
+      <button class="pf-join" onclick="joinCommunity(this,'${esc(c.id||c.name)}')">Join</button>
     </li>`).join('');
 
   const select = document.getElementById('postCommunity');
-  select.innerHTML = '<option value="">Select community</option>' + displayComms.map(c=>`<option value="${c.id||c.name}">${c.name}</option>`).join('');
+  select.innerHTML = '<option value="">Select community</option>' + displayComms.map(c=>`<option value="${esc(c.id||c.name)}">${esc(c.name)}</option>`).join('');
   document.getElementById('totalMembers').textContent = displayComms.reduce((a,c)=>a+(c.member_count||0),0).toLocaleString();
 }
 
