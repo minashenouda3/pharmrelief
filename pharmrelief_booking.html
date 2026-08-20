@@ -1820,19 +1820,20 @@ async function pharmacistConfirm(appId) {
 // Recomputes status from the two confirmation flags — never assume the
 // other party's state — and locks the shift once both have confirmed.
 // Returns true if the shift is now locked.
+// The database trigger trg_lock_shift derives status and locks the shift
+// once both flags are true. It runs with owner rights, so it works whichever
+// party confirms last — the client cannot update a shift row it does not own,
+// which previously failed silently while the UI reported success.
+// This reads back the authoritative state rather than assuming it.
 async function checkLockShift(appId) {
-  const { data } = await sb.from('shift_applications').select('*').eq('id', appId).maybeSingle();
-  if (!data) return false;
+  const { data, error } = await sb.from('shift_applications')
+    .select('*, shifts(status)').eq('id', appId).maybeSingle();
+  if (error || !data) return false;
   const both = !!(data.pharmacy_confirmed && data.pharmacist_confirmed);
-  const status = both ? 'both_confirmed'
-    : data.pharmacy_confirmed ? 'pharmacy_confirmed'
-    : data.pharmacist_confirmed ? 'pharmacist_confirmed'
-    : 'applied';
-  if (data.status !== status) {
-    await sb.from('shift_applications').update({ status }).eq('id', appId);
-  }
-  if (both) {
-    await sb.from('shifts').update({ status: 'locked' }).eq('id', data.shift_id);
+  // Only report a lock the database actually recorded.
+  if (both && data.shifts?.status !== 'locked') {
+    showToast('Both parties confirmed, but the shift did not lock. Please refresh.');
+    return false;
   }
   return both;
 }
