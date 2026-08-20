@@ -209,6 +209,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--slate);li
     <div class="pf-modal-actions">
       <button class="pf-modal-btn ghost" onclick="closeModal('login')">Cancel</button>
       <button class="pf-modal-btn primary" onclick="login()">Log in</button>
+      <div style="text-align:center;margin-top:10px">
+        <a href="#" onclick="forgotPassword();return false;" style="font-size:13px;color:var(--teal,#0d9488);text-decoration:none">Forgot your password?</a>
+      </div>
     </div>
     <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-muted)">Don't have an account? <a href="#" onclick="switchModal('login','signup')" style="color:var(--teal)">Sign up</a></p>
   </div>
@@ -443,10 +446,34 @@ async function login(){
   errEl.style.display='none';
   if(!email||!pw){errEl.textContent='Please fill in all fields';errEl.style.display='block';return;}
   const {data,error} = await sb.auth.signInWithPassword({email,password:pw});
-  if(error){errEl.textContent=error.message;errEl.style.display='block';return;}
+  if(error){errEl.textContent=friendlyAuthError(error.message);errEl.style.display='block';return;}
   closeModal('login');
   showToast('Welcome back!');
   await loadUser(data.user);
+}
+
+
+// Supabase error strings are written for developers; map the common ones.
+function friendlyAuthError(msg){
+  const m=(msg||'').toLowerCase();
+  if(m.includes('invalid login credentials')) return 'That email and password combination is not recognised.';
+  if(m.includes('email not confirmed')) return 'Please confirm your email address first — check your inbox and spam folder.';
+  if(m.includes('already registered')) return 'An account with this email already exists. Try signing in instead.';
+  if(m.includes('rate limit')||m.includes('too many')) return 'Too many attempts. Please wait a minute and try again.';
+  if(m.includes('password should be at least')) return 'Password must be at least 8 characters.';
+  return msg || 'Something went wrong. Please try again.';
+}
+
+async function forgotPassword(){
+  const email = (document.getElementById('loginEmail')?.value || '').trim();
+  const errEl = document.getElementById('loginError');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    if(errEl){errEl.textContent='Enter your email address above first.';errEl.style.display='block';}
+    return;
+  }
+  const {error} = await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://pharmrelief.ca/pharmforum.html'});
+  if(error){ if(errEl){errEl.textContent=friendlyAuthError(error.message);errEl.style.display='block';} return; }
+  showToast('If an account exists for that email, a reset link is on its way.');
 }
 
 async function signup(){
@@ -459,7 +486,15 @@ async function signup(){
   if(!email||!username||!ocp||!pw){errEl.textContent='Please fill in all fields';errEl.style.display='block';return;}
   if(pw.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='block';return;}
   const {data,error} = await sb.auth.signUp({email,password:pw,options:{data:{username,ocp_number:ocp},emailRedirectTo:'https://pharmrelief.ca/pharmforum.html'}});
-  if(error){errEl.textContent=error.message;errEl.style.display='block';return;}
+  if(error){errEl.textContent=friendlyAuthError(error.message);errEl.style.display='block';return;}
+  // Supabase returns no error when the address already has an unconfirmed
+  // user — an anti-enumeration measure. The tell is an empty identities
+  // array. No email is sent in that case, so don't claim success.
+  if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
+    errEl.textContent='An account with this email already exists but has not been verified. Check your inbox and spam folder for the original confirmation email.';
+    errEl.style.display='block';
+    return;
+  }
   if(data.session && data.user){
     await sb.from('profiles').upsert({id:data.user.id,username,ocp_number:ocp,ocp_verified:false});
   }
