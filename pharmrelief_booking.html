@@ -852,7 +852,10 @@ function calcHours(start, end, breakMins) {
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end.split(':').map(Number);
   let mins = (eh * 60 + em) - (sh * 60 + sm);
-  if (mins <= 0) mins += 24 * 60;
+  // Identical start and end is a typo, not a 24-hour shift. Only a
+  // genuinely earlier end time means the shift crossed midnight.
+  if (mins === 0) return null;
+  if (mins < 0) mins += 24 * 60;
   mins -= (parseInt(breakMins, 10) || 0);
   if (mins <= 0) return null;
   return Math.round((mins / 60) * 100) / 100;
