@@ -1,0 +1,52 @@
+name: Run database migration
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: Migration file to run
+        required: true
+        default: migration_phase4.sql
+        type: string
+      dry_run:
+        description: Print the plan without applying
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Confirm the migration file exists
+        run: |
+          if [ ! -f "${{ inputs.file }}" ]; then
+            echo "::error::Migration file not found in repo."
+            exit 1
+          fi
+          head -40 "${{ inputs.file }}"
+
+      - name: Dry run
+        if: ${{ inputs.dry_run }}
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$PGURL" -v ON_ERROR_STOP=1 --single-transaction -c "BEGIN;" -f "${{ inputs.file }}" -c "ROLLBACK;"
+
+      - name: Apply migration
+        if: ${{ !inputs.dry_run }}
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f "${{ inputs.file }}"
+
+      - name: Report schema state
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$PGURL" -c "select table_name, count(*) as columns from information_schema.columns where table_schema='public' and table_name in ('pharmacies','pharmacist_profiles','shifts','shift_applications','ratings','shift_worklogs') group by table_name order by table_name;"
