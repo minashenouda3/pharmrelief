@@ -1,0 +1,66 @@
+name: Change account role
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Account email
+        required: true
+        type: string
+      new_role:
+        description: Role to set
+        required: true
+        type: choice
+        options:
+          - pharmacy
+          - agency
+          - pharmacist
+      org_name:
+        description: Business name (pharmacy or agency only)
+        required: false
+        type: string
+      city:
+        description: City
+        required: false
+        type: string
+
+jobs:
+  change-role:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Show current state
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+          EMAIL: ${{ inputs.email }}
+        run: |
+          psql "$PGURL" -c "select u.email, u.raw_user_meta_data->>'role' as meta_role, p.account_type, pp.id is not null as has_pharmacist_row from auth.users u left join pharmacies p on p.id = u.id left join pharmacist_profiles pp on pp.id = u.id where u.email = '$EMAIL';"
+
+      - name: Apply role change
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+          EMAIL: ${{ inputs.email }}
+          ROLE: ${{ inputs.new_role }}
+          ORG: ${{ inputs.org_name }}
+          CITY: ${{ inputs.city }}
+        run: |
+          set -e
+          if [ "$ROLE" = "pharmacist" ]; then
+            psql "$PGURL" -v ON_ERROR_STOP=1 -c "delete from pharmacies where id in (select id from auth.users where email = '$EMAIL');"
+            psql "$PGURL" -v ON_ERROR_STOP=1 -c "update auth.users set raw_user_meta_data = jsonb_set(coalesce(raw_user_meta_data,'{}'::jsonb),'{role}','\"pharmacist\"') where email = '$EMAIL';"
+            psql "$PGURL" -v ON_ERROR_STOP=1 -c "insert into pharmacist_profiles (id, full_name, email, ocp_verified) select id, coalesce(nullif('$ORG',''), email), email, false from auth.users where email = '$EMAIL' on conflict (id) do nothing;"
+          else
+            psql "$PGURL" -v ON_ERROR_STOP=1 -c "delete from pharmacist_profiles where id in (select id from auth.users where email = '$EMAIL');"
+            psql "$PGURL" -v ON_ERROR_STOP=1 -c "update auth.users set raw_user_meta_data = jsonb_set(coalesce(raw_user_meta_data,'{}'::jsonb),'{role}',to_jsonb('$ROLE'::text)) where email = '$EMAIL';"
+            psql "$PGURL" -v ON_ERROR_STOP=1 -c "insert into pharmacies (id, name, city, email, account_type) select id, coalesce(nullif('$ORG',''), email), '$CITY', email, '$ROLE' from auth.users where email = '$EMAIL' on conflict (id) do update set account_type = excluded.account_type, name = excluded.name, city = excluded.city;"
+          fi
+
+      - name: Verify
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+          EMAIL: ${{ inputs.email }}
+        run: |
+          psql "$PGURL" -c "select u.email, u.raw_user_meta_data->>'role' as meta_role, p.account_type, pp.id is not null as has_pharmacist_row from auth.users u left join pharmacies p on p.id = u.id left join pharmacist_profiles pp on pp.id = u.id where u.email = '$EMAIL';"
