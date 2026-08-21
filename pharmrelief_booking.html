@@ -444,6 +444,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
         <h2 class="section-title">My Earnings</h2>
         <div class="fin-summary" id="finSummaryPharmacist"></div>
       </div>
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="font-size:13px;color:#134e4a;line-height:1.5">
+          <strong>Working shifts outside PharmRelief?</strong> Add them here to keep
+          all your hours and income in one place — useful at tax time.
+        </div>
+        <button class="btn-primary" onclick="openExternal()">+ Add outside shift</button>
+      </div>
       <div id="earningsList"><div class="loader">Loading earnings...</div></div>
     </div>
 
@@ -516,6 +523,75 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
   </div>
 </div>
 
+
+<div class="modal-backdrop" id="externalModal">
+  <div class="modal">
+    <h3 class="modal-title" id="externalTitle">Add an outside shift</h3>
+    <p class="modal-sub">A shift you booked directly or through another agency. Only you can see these.</p>
+    <div class="form-grid">
+      <div class="form-field full">
+        <label class="form-label">Pharmacy name</label>
+        <input class="form-input" id="exPharmacy" placeholder="e.g. Riverside Pharmacy" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">How did you get it?</label>
+        <select class="form-input" id="exSource" onchange="toggleSourceName()">
+          <option value="direct">Booked directly</option>
+          <option value="agency">Another agency</option>
+          <option value="locum">Locum placement</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-field" id="exSourceNameField" style="display:none">
+        <label class="form-label">Agency name</label>
+        <input class="form-input" id="exSourceName" placeholder="e.g. Maple Staffing" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Date</label>
+        <input class="form-input" id="exDate" type="date" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Start time</label>
+        <input class="form-input" id="exStart" type="time" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">End time</label>
+        <input class="form-input" id="exEnd" type="time" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Unpaid break (min)</label>
+        <input class="form-input" id="exBreak" type="number" min="0" step="5" value="0" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Hourly rate ($)</label>
+        <input class="form-input" id="exRate" type="number" step="0.01" placeholder="e.g. 62.50" />
+      </div>
+      <div class="form-field full">
+        <label class="form-label">Location (optional)</label>
+        <input class="form-input" id="exLocation" placeholder="e.g. Hamilton, ON" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Payment status</label>
+        <select class="form-input" id="exPaid">
+          <option value="unpaid">Not paid yet</option>
+          <option value="invoiced">Invoiced</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+    </div>
+    <div class="wl-calc" id="exCalc">Enter times and rate to calculate</div>
+    <div class="auth-field">
+      <label>Notes (optional)</label>
+      <textarea class="form-input" id="exNotes" rows="2"></textarea>
+    </div>
+    <div class="auth-error" id="externalError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeExternal()">Cancel</button>
+      <button class="btn-primary" id="externalSaveBtn" onclick="saveExternal()">Save shift</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -543,6 +619,123 @@ function esc(v) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// ============================================================
+//  OUTSIDE SHIFTS
+//  Work booked directly or through another agency. Logged by the
+//  pharmacist so PharmRelief holds their complete hours and income
+//  record, not just the shifts it sourced. Private to them.
+// ============================================================
+
+let externalEditId = null;
+
+function toggleSourceName() {
+  const isAgency = document.getElementById('exSource').value === 'agency';
+  document.getElementById('exSourceNameField').style.display = isAgency ? 'block' : 'none';
+}
+
+function updateExternalCalc() {
+  const h = calcHours(document.getElementById('exStart').value,
+                      document.getElementById('exEnd').value,
+                      document.getElementById('exBreak').value);
+  const rate = parseFloat(document.getElementById('exRate').value) || 0;
+  const el = document.getElementById('exCalc');
+  if (h == null) { el.textContent = 'Enter valid start and end times'; return; }
+  el.innerHTML = rate
+    ? `${h} hours &times; ${money(rate)}/hr = <strong>${money(h * rate)}</strong>`
+    : `${h} hours — add a rate to calculate pay`;
+}
+
+function openExternal(row) {
+  externalEditId = row ? row.id : null;
+  document.getElementById('externalTitle').textContent =
+    row ? 'Edit outside shift' : 'Add an outside shift';
+  const set = (id, v) => { document.getElementById(id).value = v ?? ''; };
+  set('exPharmacy', row?.pharmacy_name);
+  set('exSource', row?.source || 'direct');
+  set('exSourceName', row?.source_name);
+  set('exDate', row?.shift_date);
+  set('exStart', (row?.start_time || '').slice(0, 5));
+  set('exEnd', (row?.end_time || '').slice(0, 5));
+  set('exBreak', row?.break_minutes ?? 0);
+  set('exRate', row?.hourly_rate);
+  set('exLocation', row?.location);
+  set('exPaid', row?.payment_status || 'unpaid');
+  set('exNotes', row?.notes);
+  toggleSourceName();
+  document.getElementById('externalError').style.display = 'none';
+  ['exStart','exEnd','exBreak','exRate'].forEach(id =>
+    document.getElementById(id).oninput = updateExternalCalc);
+  updateExternalCalc();
+  document.getElementById('externalModal').classList.add('open');
+}
+
+function closeExternal() {
+  document.getElementById('externalModal').classList.remove('open');
+  externalEditId = null;
+}
+
+async function saveExternal() {
+  const v = id => document.getElementById(id).value.trim();
+  const pharmacy = v('exPharmacy');
+  const date = v('exDate');
+  const start = v('exStart');
+  const end = v('exEnd');
+  const brk = parseInt(v('exBreak'), 10) || 0;
+  const rate = parseFloat(v('exRate')) || null;
+
+  document.getElementById('externalError').style.display = 'none';
+  if (!pharmacy) { showAuthError('externalError', 'Please enter the pharmacy name.'); return; }
+  if (!date) { showAuthError('externalError', 'Please enter the shift date.'); return; }
+
+  const hours = calcHours(start, end, brk);
+  if ((start || end) && hours == null) {
+    showAuthError('externalError', 'Those start and end times do not make a valid shift.');
+    return;
+  }
+
+  const payload = {
+    pharmacist_id: currentUser.id,
+    pharmacy_name: pharmacy,
+    source: v('exSource'),
+    source_name: v('exSource') === 'agency' ? (v('exSourceName') || null) : null,
+    shift_date: date,
+    start_time: start || null,
+    end_time: end || null,
+    break_minutes: brk,
+    hours_worked: hours,
+    hourly_rate: rate,
+    gross_amount: (hours && rate) ? Math.round(hours * rate * 100) / 100 : null,
+    location: v('exLocation') || null,
+    notes: v('exNotes') || null,
+    payment_status: v('exPaid'),
+    paid_at: v('exPaid') === 'paid' ? new Date().toISOString() : null
+  };
+
+  await withBusy('externalSaveBtn', 'Saving...', async () => {
+    const q = externalEditId
+      ? sb.from('external_shifts').update(payload).eq('id', externalEditId)
+      : sb.from('external_shifts').insert(payload);
+    const { error } = await q;
+    if (error) { showAuthError('externalError', friendlyAuthError(error.message)); return; }
+    closeExternal();
+    showToast(externalEditId ? 'Outside shift updated.' : 'Outside shift added.');
+    loadEarnings();
+  });
+}
+
+async function deleteExternal(id) {
+  if (!confirm('Remove this outside shift from your records?')) return;
+  const { error } = await sb.from('external_shifts').delete().eq('id', id);
+  if (error) { showToast('Could not remove: ' + error.message); return; }
+  showToast('Removed.');
+  loadEarnings();
+}
+
+function sourceLabel(row) {
+  if (row.source === 'agency') return esc(row.source_name || 'Another agency');
+  return { direct: 'Booked directly', locum: 'Locum', other: 'Other' }[row.source] || 'Outside';
 }
 
 // ============================================================
@@ -930,46 +1123,94 @@ function statusPill(s) {
 
 async function loadEarnings() {
   const el = document.getElementById('earningsList');
-  const { data, error } = await sb.from('shift_worklogs')
-    .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, location)')
-    .eq('pharmacist_id', currentUser.id)
-    .order('created_at', { ascending: false });
-  if (error) { el.innerHTML = `<div class="empty">Could not load earnings: ${error.message}</div>`; return; }
 
-  const totals = { paid: 0, owed: 0, hours: 0 };
-  (data || []).forEach(w => {
-    totals.hours += Number(w.hours_worked || 0);
-    if (w.status === 'paid') totals.paid += Number(w.gross_amount || 0);
-    else if (w.status !== 'disputed') totals.owed += Number(w.gross_amount || 0);
+  // Platform shifts and outside shifts are stored separately but belong in
+  // one view — the pharmacist's income does not care where the work came from.
+  const [plat, ext] = await Promise.all([
+    sb.from('shift_worklogs')
+      .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, location)')
+      .eq('pharmacist_id', currentUser.id),
+    sb.from('external_shifts')
+      .select('*')
+      .eq('pharmacist_id', currentUser.id)
+  ]);
+
+  if (plat.error) { el.innerHTML = `<div class="empty">Could not load earnings: ${esc(plat.error.message)}</div>`; return; }
+  // A missing external_shifts table (migration not yet run) must not break
+  // the whole panel — fall back to platform shifts only.
+  const extRows = ext.error ? [] : (ext.data || []);
+
+  const rows = [
+    ...(plat.data || []).map(w => ({
+      kind: 'platform',
+      id: w.id,
+      date: w.shifts?.shift_date,
+      name: w.shifts?.client_pharmacy_name || w.shifts?.pharmacy_name || '',
+      hours: w.hours_worked, rate: w.hourly_rate, amount: w.gross_amount,
+      breakMins: w.break_minutes, status: w.status,
+      note: w.dispute_reason, ref: w.payment_reference
+    })),
+    ...extRows.map(x => ({
+      kind: 'external',
+      id: x.id, raw: x,
+      date: x.shift_date,
+      name: x.pharmacy_name,
+      hours: x.hours_worked, rate: x.hourly_rate, amount: x.gross_amount,
+      breakMins: x.break_minutes,
+      status: x.payment_status === 'paid' ? 'paid'
+            : x.payment_status === 'invoiced' ? 'submitted' : 'draft',
+      note: x.notes
+    }))
+  ].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+  const t = { hours: 0, owed: 0, paid: 0, outside: 0 };
+  rows.forEach(r => {
+    t.hours += Number(r.hours || 0);
+    const amt = Number(r.amount || 0);
+    if (r.status === 'paid') t.paid += amt;
+    else if (r.status !== 'disputed') t.owed += amt;
+    if (r.kind === 'external') t.outside += amt;
   });
-  document.getElementById('finSummaryPharmacist').innerHTML = `
-    <div class="fin-stat"><div class="fin-stat-label">Hours logged</div><div class="fin-stat-value">${totals.hours.toFixed(1)}</div></div>
-    <div class="fin-stat"><div class="fin-stat-label">Outstanding</div><div class="fin-stat-value">${money(totals.owed)}</div></div>
-    <div class="fin-stat"><div class="fin-stat-label">Paid to date</div><div class="fin-stat-value">${money(totals.paid)}</div></div>`;
 
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="empty">No hours submitted yet. Once you complete a confirmed shift, submit your hours from the Confirmed Shifts tab.</div>';
+  document.getElementById('finSummaryPharmacist').innerHTML = `
+    <div class="fin-stat"><div class="fin-stat-label">Hours logged</div><div class="fin-stat-value">${t.hours.toFixed(1)}</div></div>
+    <div class="fin-stat"><div class="fin-stat-label">Outstanding</div><div class="fin-stat-value">${money(t.owed)}</div></div>
+    <div class="fin-stat"><div class="fin-stat-label">Paid to date</div><div class="fin-stat-value">${money(t.paid)}</div></div>
+    ${t.outside ? `<div class="fin-stat"><div class="fin-stat-label">Of which outside</div><div class="fin-stat-value">${money(t.outside)}</div></div>` : ''}`;
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty">No hours recorded yet. Submit hours from a confirmed shift, or add an outside shift above.</div>';
     return;
   }
-  el.innerHTML = data.map(w => {
-    const s = w.shifts || {};
-    return `<div class="shift-card">
+
+  el.innerHTML = rows.map(r => `
+    <div class="shift-card">
       <div class="shift-card-head">
         <div>
-          <div class="shift-pharmacy">${esc(s.client_pharmacy_name || s.pharmacy_name || '')}</div>
-          <div class="shift-date">${s.shift_date || ''}</div>
+          <div class="shift-pharmacy">
+            ${esc(r.name)}
+            ${r.kind === 'external' ? `<span class="badge badge-agency">${sourceLabel(r.raw)}</span>` : ''}
+          </div>
+          <div class="shift-date">${esc(r.date)}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:18px;font-weight:700;color:#0f172a">${money(w.gross_amount)}</div>
-          ${statusPill(w.status)}
+          <div style="font-size:18px;font-weight:700;color:#0f172a">${r.amount ? money(r.amount) : '—'}</div>
+          ${statusPill(r.status)}
         </div>
       </div>
-      <div class="shift-meta">${w.hours_worked} hrs @ ${money(w.hourly_rate)}/hr${w.break_minutes ? ` · ${w.break_minutes} min break` : ''}</div>
-      ${w.dispute_reason ? `<div style="font-size:13px;color:#991b1b;margin-top:8px">Disputed: ${esc(w.dispute_reason)}</div>` : ''}
-      ${w.status === 'paid' && w.payment_reference ? `<div style="font-size:12px;color:#64748b;margin-top:6px">Ref: ${esc(w.payment_reference)}</div>` : ''}
-    </div>`;
-  }).join('');
+      <div class="shift-meta">
+        ${r.hours ? `${r.hours} hrs` : 'Hours not recorded'}${r.rate ? ` @ ${money(r.rate)}/hr` : ''}${r.breakMins ? ` · ${r.breakMins} min break` : ''}
+      </div>
+      ${r.note ? `<div style="font-size:13px;color:#475569;margin-top:8px">${esc(r.note)}</div>` : ''}
+      ${r.ref ? `<div style="font-size:12px;color:#64748b;margin-top:6px">Ref: ${esc(r.ref)}</div>` : ''}
+      ${r.kind === 'external' ? `
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn-secondary" onclick='openExternal(${JSON.stringify(r.raw).replace(/'/g, "&#39;")})'>Edit</button>
+          <button class="btn-secondary" onclick="deleteExternal('${r.id}')">Remove</button>
+        </div>` : ''}
+    </div>`).join('');
 }
+
 
 async function loadTimesheets() {
   const el = document.getElementById('timesheetList');
