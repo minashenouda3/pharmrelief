@@ -167,3 +167,30 @@ sides now handle this (the forum builds a profile from signup metadata; the
 booking app prompts for role setup rather than guessing pharmacist). This
 works, but a single shared identity across the Pharm brand family would
 need a deliberate merge — decide before adding a third product.
+
+---
+
+## Outside shifts (added 20 Aug)
+
+Pharmacists can log shifts booked directly or through another agency, so
+PharmRelief holds their complete hours and income record rather than only
+the work it sourced. Found under **Earnings → Add outside shift**.
+
+Requires `migration_phase6_external_shifts.sql`. Until it runs, the earnings
+panel still works — it falls back to platform shifts only rather than
+erroring.
+
+Design notes:
+- Separate `external_shifts` table, not a flag on `shifts`. Reusing `shifts`
+  would mean dropping the foreign key that stops fabricated pharmacy ids.
+- Rows are private to the pharmacist (`auth.uid() = pharmacist_id` for read
+  and write). These may name pharmacies that compete with PharmRelief
+  customers, and they are a personal record, not marketplace data.
+- Hours and payment status live on the row. There is no counterparty to
+  approve a timesheet, so the `shift_worklogs` approval flow does not apply.
+- Earnings totals combine both sources, with an "of which outside" figure
+  so platform-sourced income stays visible separately.
+
+Why it matters commercially: it makes the platform a pharmacist's single
+income record — useful at tax time — which is a reason to keep using it even
+in a month when no shifts came through PharmRelief.
