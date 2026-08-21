@@ -1,6 +1,33 @@
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-XSS-Protection: 1; mode=block
+
+# Beta gate. Everything except the public landing page sits behind basic
+# auth until the platform opens. index.html is deliberately excluded so the
+# marketing page and Formspree waitlist stay reachable.
+#
+# Note: confirmation and password-reset links from email also hit this gate,
+# so pilot pharmacies need the credentials before they sign up.
+
+/pharmrelief_booking.html
+  Basic-Auth: pharmrelief:testing
+
+/pharmforum.html
+  Basic-Auth: pharmrelief:testing
+
+/pharmrelief_ocp_hub.html
+  Basic-Auth: pharmrelief:testing
+
+/pharmrelief_support.html
+  Basic-Auth: pharmrelief:testing
+
+/pharmrelief_complete.html
+  Basic-Auth: pharmrelief:testing
+
+/pharmrelief_mobile.html
+  Basic-Auth: pharmrelief:testing
 
 /pharmrelief_phase3.html
   Basic-Auth: pharmrelief:testing
