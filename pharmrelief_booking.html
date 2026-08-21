@@ -444,7 +444,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
         <h2 class="section-title">My Earnings</h2>
         <div class="fin-summary" id="finSummaryPharmacist"></div>
       </div>
-      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+      <div id="outsidePrompt" style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
         <div style="font-size:13px;color:#134e4a;line-height:1.5">
           <strong>Working shifts outside PharmRelief?</strong> Add them here to keep
           all your hours and income in one place — useful at tax time.
@@ -620,6 +620,24 @@ function esc(v) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// ============================================================
+//  FEATURE FLAGS
+//  Everything except the booking loop is off by default. The loop is the
+//  product promise: a pharmacy posts a shift, a pharmacist takes it, both
+//  confirm. Features that are built but unproven stay hidden so a pilot
+//  sees four screens that work rather than twelve that might not.
+//  Flip a flag to true once that feature has been tested end to end.
+// ============================================================
+const FEATURES = {
+  ratings:        false,  // needs migration_phase4 + real completed shifts
+  profilePhotos:  false,  // needs migration_phase4 + avatars bucket
+  verification:   false,  // needs migration_phase4 + a manual review process
+  timesheets:     false,  // needs migration_phase4
+  outsideShifts:  false,  // needs migration_phase6
+  profileTab:     true,   // basic profile editing is safe
+};
+
 
 // ============================================================
 //  OUTSIDE SHIFTS
@@ -935,7 +953,7 @@ async function loadProfile() {
       </div>
     </div>`;
 
-  const verifSection = isPoster() ? '' : `
+  const verifSection = (isPoster() || !FEATURES.verification) ? '' : `
     <div class="profile-card">
       <h3 style="margin:0 0 8px;font-size:16px">Professional verification ${verifBadge(p.verification_status)}</h3>
       <p style="font-size:13px;color:#64748b;line-height:1.6;margin:0 0 14px">
@@ -1123,6 +1141,8 @@ function statusPill(s) {
 
 async function loadEarnings() {
   const el = document.getElementById('earningsList');
+  const prompt = document.getElementById('outsidePrompt');
+  if (prompt) prompt.style.display = FEATURES.outsideShifts ? 'flex' : 'none';
 
   // Platform shifts and outside shifts are stored separately but belong in
   // one view — the pharmacist's income does not care where the work came from.
@@ -1732,20 +1752,23 @@ function posterLabel(s) {
 
 function buildTabs() {
   const tabs = document.getElementById('appTabs');
+  const tab = (id, label, on = true) => on
+    ? `<button class="app-tab" onclick="showTab('${id}',this)">${label}</button>` : '';
+
   if (isPoster()) {
     tabs.innerHTML = `
       <button class="app-tab active" onclick="showTab('post-shift',this)">+ Post Shift</button>
-      <button class="app-tab" onclick="showTab('my-shifts-pharmacy',this)">My Shifts</button>
-      <button class="app-tab" onclick="showTab('timesheets',this)">Timesheets</button>
-      <button class="app-tab" onclick="showTab('profile',this)">Profile</button>`;
+      ${tab('my-shifts-pharmacy', 'My Shifts')}
+      ${tab('timesheets', 'Timesheets', FEATURES.timesheets)}
+      ${tab('profile', 'Profile', FEATURES.profileTab)}`;
     showTab('post-shift');
   } else {
     tabs.innerHTML = `
       <button class="app-tab active" onclick="showTab('browse-shifts',this)">Browse Shifts</button>
-      <button class="app-tab" onclick="showTab('my-applications',this)">My Applications</button>
-      <button class="app-tab" onclick="showTab('my-confirmed',this)">Confirmed Shifts</button>
-      <button class="app-tab" onclick="showTab('earnings',this)">Earnings</button>
-      <button class="app-tab" onclick="showTab('profile',this)">Profile</button>`;
+      ${tab('my-applications', 'My Applications')}
+      ${tab('my-confirmed', 'Confirmed Shifts')}
+      ${tab('earnings', 'Earnings', FEATURES.timesheets || FEATURES.outsideShifts)}
+      ${tab('profile', 'Profile', FEATURES.profileTab)}`;
     showTab('browse-shifts');
     loadBrowseShifts();
   }
@@ -1821,6 +1844,7 @@ async function loadMyShiftsPharmacy() {
 
 // Ratings are fetched after render so one slow lookup cannot block the list.
 async function hydrateApplicantRatings() {
+  if (!FEATURES.ratings) return;
   const nodes = [...document.querySelectorAll('.applicant-rating[data-uid]')].filter(n => n.dataset.uid);
   const ids = [...new Set(nodes.map(n => n.dataset.uid))];
   if (!ids.length) return;
@@ -1842,11 +1866,11 @@ function renderPharmacyShiftCard(s) {
     const pharmiConfirmed = a.pharmacist_confirmed;
     const isLocked = pharmaConfirmed && pharmiConfirmed;
     return `<div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      ${avatarHtml(a.pharmacist_profiles?.avatar_url, a.pharmacist_profiles?.full_name)}
+      ${FEATURES.profilePhotos ? avatarHtml(a.pharmacist_profiles?.avatar_url, a.pharmacist_profiles?.full_name) : ''}
       <div style="flex:1;min-width:150px">
         <div style="font-size:13px;font-weight:500">
           ${esc(a.pharmacist_profiles?.full_name || 'Pharmacist')}
-          ${a.pharmacist_profiles?.verification_status === 'verified' ? '<span class="verif-badge verif-verified">✓ Verified</span>' : ''}
+          ${FEATURES.verification && a.pharmacist_profiles?.verification_status === 'verified' ? '<span class="verif-badge verif-verified">✓ Verified</span>' : ''}
         </div>
         <div style="font-size:11px;color:var(--muted)">${esc(a.pharmacist_profiles?.ocp_number || '')}${a.pharmacist_profiles?.years_experience ? ` · ${a.pharmacist_profiles.years_experience} yrs` : ''}</div>
         <div class="applicant-rating" data-uid="${a.pharmacist_profiles?.id || ''}"></div>
@@ -1855,7 +1879,7 @@ function renderPharmacyShiftCard(s) {
         <div class="confirm-step ${pharmaConfirmed?'step-done':'step-pending'}">${pharmaConfirmed?'✓ You confirmed':'Awaiting your confirm'}</div>
         <div class="confirm-step ${pharmiConfirmed?'step-done':'step-waiting'}">${pharmiConfirmed?'✓ Pharmacist confirmed':'Awaiting pharmacist'}</div>
       </div>
-      ${isLocked && shiftIsPast(s) ? `<button class="btn btn-secondary btn-sm" onclick="openRating('${s.id}','${a.pharmacist_profiles?.id}','${esc(a.pharmacist_profiles?.full_name || 'Pharmacist')}')">Rate pharmacist</button>` : ''}
+      ${FEATURES.ratings && isLocked && shiftIsPast(s) ? `<button class="btn btn-secondary btn-sm" onclick="openRating('${s.id}','${a.pharmacist_profiles?.id}','${esc(a.pharmacist_profiles?.full_name || 'Pharmacist')}')">Rate pharmacist</button>` : ''}
       ${!pharmaConfirmed ? `<button class="btn btn-primary btn-sm" onclick="pharmacyConfirm('${a.id}')">Confirm</button>` : ''}
       ${isLocked ? '<span class="badge badge-locked">🔒 Shift Locked</span>' : ''}
     </div>`;
@@ -2037,8 +2061,8 @@ async function loadMyConfirmed() {
       </div>
       ${s?.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">${esc(s.notes)}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        ${shiftIsPast(s) ? `<button class="btn-primary" onclick='openWorklog(${JSON.stringify(s).replace(/'/g, "&#39;")})'>Submit hours</button>` : ''}
-        ${shiftIsPast(s) ? `<button class="btn-secondary" onclick="openRating('${s?.id}','${s?.pharmacy_id}','${esc(s?.pharmacy_name)}')">Rate pharmacy</button>` : ''}
+        ${FEATURES.timesheets && shiftIsPast(s) ? `<button class="btn-primary" onclick='openWorklog(${JSON.stringify(s).replace(/'/g, "&#39;")})'>Submit hours</button>` : ''}
+        ${FEATURES.ratings && shiftIsPast(s) ? `<button class="btn-secondary" onclick="openRating('${s?.id}','${s?.pharmacy_id}','${esc(s?.pharmacy_name)}')">Rate pharmacy</button>` : ''}
       </div>
     </div>`;
   }).join('');
