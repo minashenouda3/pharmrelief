@@ -135,6 +135,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
 .st-approved{background:#d1fae5;color:#065f46}
 .st-disputed{background:#fee2e2;color:#991b1b}
 .st-paid{background:#0d9488;color:#fff}
+.export-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.export-label{font-size:13px;font-weight:600;color:#475569}
+.export-select{width:auto;min-width:140px;padding:7px 10px;font-size:13px}
 .upload-hint{font-size:12px;color:#64748b;margin-top:6px}
 .pw-wrap{position:relative}
 .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#0d9488;font-size:12px;font-weight:600;cursor:pointer;padding:4px}
@@ -436,6 +439,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
         <h2 class="section-title">Timesheets &amp; Payments</h2>
         <div class="fin-summary" id="finSummaryPharmacy"></div>
       </div>
+      <div class="export-bar" id="exportBarTimesheets">
+        <span class="export-label">Export</span>
+        <select class="form-input export-select" id="exportPeriod">
+          <option value="ytd">This year</option>
+          <option value="q">This quarter</option>
+          <option value="last-year">Last year</option>
+          <option value="all">All time</option>
+        </select>
+        <button class="btn-secondary" onclick="exportTimesheets('csv')">CSV / QuickBooks Online</button>
+        <button class="btn-secondary" onclick="exportTimesheets('iif')">QuickBooks Desktop (.iif)</button>
+      </div>
       <div id="timesheetList"><div class="loader">Loading timesheets...</div></div>
     </div>
 
@@ -450,6 +464,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--slate);min-height:
           all your hours and income in one place — useful at tax time.
         </div>
         <button class="btn-primary" onclick="openExternal()">+ Add outside shift</button>
+      </div>
+      <div class="export-bar" id="exportBarEarnings">
+        <span class="export-label">Export</span>
+        <select class="form-input export-select" id="exportPeriod">
+          <option value="ytd">This year</option>
+          <option value="q">This quarter</option>
+          <option value="last-year">Last year</option>
+          <option value="all">All time</option>
+        </select>
+        <button class="btn-secondary" onclick="exportEarnings('csv')">CSV / QuickBooks Online</button>
+        <button class="btn-secondary" onclick="exportEarnings('iif')">QuickBooks Desktop (.iif)</button>
       </div>
       <div id="earningsList"><div class="loader">Loading earnings...</div></div>
     </div>
@@ -622,6 +647,155 @@ function esc(v) {
 }
 
 // ============================================================
+//  ACCOUNTING EXPORT
+//  Pharmacists export income for their return; pharmacies export what they
+//  paid relief staff. Generated client-side — the data is already loaded,
+//  and routing financial records through a server adds custody we do not
+//  need. Two formats: CSV for QuickBooks Online, Xero and accountants, and
+//  IIF for QuickBooks Desktop.
+// ============================================================
+
+function csvCell(v) {
+  const s = v === null || v === undefined ? '' : String(v);
+  // Leading =, +, - or @ are treated as formulas by Excel and Sheets. A
+  // pharmacy named "-Rx" would otherwise execute rather than display.
+  const risky = /^[=+\-@\t\r]/.test(s);
+  const needsQuotes = risky || /[",\n\r]/.test(s);
+  const body = risky ? "'" + s : s;
+  return needsQuotes ? '"' + body.replace(/"/g, '""') + '"' : body;
+}
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// QuickBooks Desktop expects MM/DD/YYYY regardless of locale.
+function qbDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = String(iso).slice(0, 10).split('-');
+  return `${m}/${d}/${y}`;
+}
+
+function exportRowsToCsv(rows, filename) {
+  if (!rows.length) { showToast('Nothing to export for that period.'); return; }
+  const headers = Object.keys(rows[0]);
+  const lines = [headers.map(csvCell).join(',')];
+  rows.forEach(r => lines.push(headers.map(h => csvCell(r[h])).join(',')));
+  // BOM so Excel opens UTF-8 correctly on Windows.
+  downloadFile(filename, '\ufeff' + lines.join('\r\n'), 'text/csv;charset=utf-8');
+  showToast(`Exported ${rows.length} record${rows.length === 1 ? '' : 's'}.`);
+}
+
+// IIF is tab-delimited and order-sensitive: header rows first, then one
+// TRNS / SPL / ENDTRNS block per transaction.
+function exportToIif(rows, filename, opts) {
+  if (!rows.length) { showToast('Nothing to export for that period.'); return; }
+  const { trnsType, arAccount, categoryAccount } = opts;
+  const out = [
+    ['!TRNS', 'TRNSTYPE', 'DATE', 'ACCNT', 'NAME', 'AMOUNT', 'MEMO'].join('\t'),
+    ['!SPL', 'TRNSTYPE', 'DATE', 'ACCNT', 'NAME', 'AMOUNT', 'MEMO'].join('\t'),
+    ['!ENDTRNS'].join('\t')
+  ];
+  const clean = v => String(v || '').replace(/[\t\r\n]/g, ' ');
+  rows.forEach(r => {
+    const value = Number(r.amount || 0);
+    const amt = value.toFixed(2);
+    // Negating the formatted string coerces it back to a number and loses
+    // the decimals; QuickBooks rejects inconsistent amount formatting.
+    const negAmt = (-value).toFixed(2);
+    const date = qbDate(r.date);
+    const name = clean(r.name);
+    const memo = clean(r.memo);
+    // The transaction line carries the opposite sign to its split.
+    out.push(['TRNS', trnsType, date, arAccount, name, negAmt, memo].join('\t'));
+    out.push(['SPL', trnsType, date, categoryAccount, name, amt, memo].join('\t'));
+    out.push('ENDTRNS');
+  });
+  downloadFile(filename, out.join('\r\n'), 'application/octet-stream');
+  showToast(`Exported ${rows.length} transaction${rows.length === 1 ? '' : 's'} for QuickBooks Desktop.`);
+}
+
+function exportPeriod() {
+  const v = document.getElementById('exportPeriod')?.value || 'all';
+  const now = new Date();
+  if (v === 'ytd') return { from: `${now.getFullYear()}-01-01`, to: '9999-12-31', label: `${now.getFullYear()}` };
+  if (v === 'last-year') return { from: `${now.getFullYear() - 1}-01-01`, to: `${now.getFullYear() - 1}-12-31`, label: `${now.getFullYear() - 1}` };
+  if (v === 'q') {
+    const q = Math.floor(now.getMonth() / 3);
+    const from = new Date(now.getFullYear(), q * 3, 1);
+    return { from: from.toISOString().slice(0, 10), to: '9999-12-31', label: `${now.getFullYear()}-Q${q + 1}` };
+  }
+  return { from: '0000-01-01', to: '9999-12-31', label: 'all' };
+}
+
+// Cached by the last loadEarnings / loadTimesheets call so export never
+// re-queries and can never disagree with what is on screen.
+let lastEarningsRows = [];
+let lastTimesheetRows = [];
+
+function exportEarnings(format) {
+  const p = exportPeriod();
+  const rows = lastEarningsRows.filter(r => r.date >= p.from && r.date <= p.to);
+  const name = (currentProfile?.full_name || 'pharmacist').replace(/[^\w-]+/g, '_');
+
+  if (format === 'iif') {
+    exportToIif(
+      rows.map(r => ({
+        date: r.date, name: r.name, amount: r.amount,
+        memo: `Relief shift${r.hours ? ` — ${r.hours} hrs` : ''}${r.kind === 'external' ? ' (outside PharmRelief)' : ''}`
+      })).filter(r => r.amount),
+      `pharmrelief_income_${p.label}.iif`,
+      { trnsType: 'INVOICE', arAccount: 'Accounts Receivable', categoryAccount: 'Professional Fees Income' }
+    );
+    return;
+  }
+
+  exportRowsToCsv(rows.map(r => ({
+    Date: r.date,
+    Pharmacy: r.name,
+    Source: r.kind === 'external' ? (r.raw ? sourceLabel(r.raw) : 'Outside') : 'PharmRelief',
+    Hours: r.hours ?? '',
+    'Rate': r.rate ?? '',
+    'Gross Amount': r.amount ?? '',
+    'Payment Status': r.status,
+    Notes: r.note || ''
+  })), `pharmrelief_income_${p.label}.csv`);
+}
+
+function exportTimesheets(format) {
+  const p = exportPeriod();
+  const rows = lastTimesheetRows.filter(r => r.date >= p.from && r.date <= p.to);
+  if (format === 'iif') {
+    exportToIif(
+      rows.map(r => ({
+        date: r.date, name: r.pharmacist || 'Relief pharmacist', amount: r.amount,
+        memo: `Relief shift${r.hours ? ` — ${r.hours} hrs` : ''}`
+      })).filter(r => r.amount),
+      `pharmrelief_payments_${p.label}.iif`,
+      { trnsType: 'BILL', arAccount: 'Accounts Payable', categoryAccount: 'Professional Fees' }
+    );
+    return;
+  }
+  exportRowsToCsv(rows.map(r => ({
+    Date: r.date,
+    Pharmacist: r.pharmacist || '',
+    Hours: r.hours ?? '',
+    Rate: r.rate ?? '',
+    'Gross Amount': r.amount ?? '',
+    Status: r.status,
+    'Payment Reference': r.ref || ''
+  })), `pharmrelief_payments_${p.label}.csv`);
+}
+
+// ============================================================
 //  FEATURE FLAGS
 //  Everything except the booking loop is off by default. The loop is the
 //  product promise: a pharmacy posts a shift, a pharmacist takes it, both
@@ -636,6 +810,7 @@ const FEATURES = {
   timesheets:     false,  // needs migration_phase4
   outsideShifts:  false,  // needs migration_phase6
   profileTab:     true,   // basic profile editing is safe
+  accountingExport: true, // read-only CSV / QuickBooks export; safe to ship
 };
 
 
@@ -1143,6 +1318,8 @@ async function loadEarnings() {
   const el = document.getElementById('earningsList');
   const prompt = document.getElementById('outsidePrompt');
   if (prompt) prompt.style.display = FEATURES.outsideShifts ? 'flex' : 'none';
+  const bar = document.getElementById('exportBarEarnings');
+  if (bar) bar.style.display = FEATURES.accountingExport ? 'flex' : 'none';
 
   // Platform shifts and outside shifts are stored separately but belong in
   // one view — the pharmacist's income does not care where the work came from.
@@ -1183,6 +1360,7 @@ async function loadEarnings() {
     }))
   ].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 
+  lastEarningsRows = rows;
   const t = { hours: 0, owed: 0, paid: 0, outside: 0 };
   rows.forEach(r => {
     t.hours += Number(r.hours || 0);
@@ -1234,11 +1412,20 @@ async function loadEarnings() {
 
 async function loadTimesheets() {
   const el = document.getElementById('timesheetList');
+  const bar = document.getElementById('exportBarTimesheets');
+  if (bar) bar.style.display = FEATURES.accountingExport ? 'flex' : 'none';
   const { data, error } = await sb.from('shift_worklogs')
     .select('*, shifts(pharmacy_name, client_pharmacy_name, shift_date, location)')
     .eq('pharmacy_id', currentUser.id)
     .order('created_at', { ascending: false });
   if (error) { el.innerHTML = `<div class="empty">Could not load timesheets: ${error.message}</div>`; return; }
+
+  lastTimesheetRows = (data || []).map(w => ({
+    date: w.shifts?.shift_date,
+    pharmacist: w.pharmacist_name || '',
+    hours: w.hours_worked, rate: w.hourly_rate, amount: w.gross_amount,
+    status: w.status, ref: w.payment_reference
+  }));
 
   const totals = { pending: 0, approved: 0, paid: 0 };
   (data || []).forEach(w => {
