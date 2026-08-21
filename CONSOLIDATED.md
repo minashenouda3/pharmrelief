@@ -185,3 +185,42 @@ confirm → lock has not once completed with two real accounts.
 **Eleven bugs fixed 19–20 Aug**, including three stored-XSS vulnerabilities,
 four silent data-integrity failures, and a timesheet that billed 24 hours for
 a mistyped end time. See `STATUS.md` for the full list.
+
+---
+
+## 8. PharmForum shows fabricated content
+
+Verified 20 Aug against the live site and database.
+
+The forum displays 38 posts, a **7,154 member** count, and community
+membership figures in the hundreds. The database behind it returns **0
+posts, 0 communities, 0 profiles**. All visible content comes from a
+hardcoded `DEMO_POSTS` array in the page, with invented usernames
+(`PharmMgr_GTA`, `RPh_Ontario`) and vote and comment counts.
+
+The Supabase *auth* is real — signup, login and OCP fields work, and a real
+account can be created. The *content* is not, and nothing a member posts
+joins the demo feed in any meaningful way.
+
+This matters for two reasons:
+
+1. **Planning.** The Aug 10 record reads "PharmForum is live." The auth is
+   live; the community is empty. Seeding or launching it is remaining work.
+2. **Credibility.** Inventing 7,154 members and specific member complaints
+   is fine as a design mock. Showing it to a pilot pharmacy as though the
+   community exists would be a misrepresentation, and pharmacists talk to
+   each other. Either seed it with disclosed sample content clearly labelled
+   as such, or empty it before anyone outside sees it.
+
+Also unverified: whether the forum tables are empty or whether RLS blocks
+anonymous reads. Queries return zero rows without error, which means the
+tables exist. Worth checking before assuming data was lost.
+
+---
+
+## 9. Fixed on 20 Aug during consolidation
+
+- `_headers` now gates every app page behind basic auth. Previously only the
+  phase-3 mockup was protected while both live apps were open.
+- Lock trigger corrected so a cancelled shift cannot be revived to locked by
+  a late confirmation.
