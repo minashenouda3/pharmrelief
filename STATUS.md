@@ -128,3 +128,42 @@ Two tests exist purely to guard the first and last of these.
   which does not help. See `email_templates.md`.
 - Netlify PAT `pharmrelief-deploy` expires 4 Sep 2026. **Nothing uses it** —
   deploys go through the Netlify GitHub App. Safe to let expire.
+
+---
+
+## Architecture — how the pieces fit (audited 20 Aug 2026)
+
+Work has spanned several sessions. This section records how the modules
+relate so future changes don't collide at a layer someone forgot about.
+
+**Only two files touch the database.** `pharmrelief_booking.html` and
+`pharmforum.html` have live Supabase clients. `pharmrelief_complete.html`,
+`pharmrelief_mobile.html` and `pharmrelief_phase3.html` have none — no
+client, no fetch, no storage. They are static mockups. Phase 3 features
+shown there are **not implemented**.
+
+**Table ownership, so writes don't compete:**
+
+| Table | Written by |
+|---|---|
+| `pharmacies`, `pharmacist_profiles`, `shifts`, `shift_applications`, `ratings`, `shift_worklogs`, `preferred_pharmacies` | booking app only |
+| `profiles`, `posts`, `communities` | forum only |
+
+**Shift status has exactly one writer per transition.** The client sets the
+two boolean confirm flags; the `trg_lock_shift` trigger derives
+`shift_applications.status` and locks the shift. The client must never
+write either of those directly — that was the original bug, and the trigger
+now owns it. `cancelShift()` is the one exception: it writes
+`shifts.status = 'cancelled'`, and the trigger only locks shifts whose
+status is `'open'` so a late confirmation cannot revive a cancelled shift.
+
+**The two migrations are independent.** No shared tables or columns; phase 5
+depends only on original-schema columns. Either order works.
+
+**Known seam — one identity, two profile tables.** Booking and forum share
+`auth.users` but write to `pharmacist_profiles` and `profiles`
+respectively. An account created in one has no profile in the other. Both
+sides now handle this (the forum builds a profile from signup metadata; the
+booking app prompts for role setup rather than guessing pharmacist). This
+works, but a single shared identity across the Pharm brand family would
+need a deliberate merge — decide before adding a third product.
