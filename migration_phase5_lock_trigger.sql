@@ -26,8 +26,11 @@ begin
   end;
 
   if new.pharmacy_confirmed and new.pharmacist_confirmed then
+    -- Only an open shift may lock. A cancelled shift must stay cancelled:
+    -- cancelShift() in the client writes 'cancelled', and without this
+    -- guard a late confirmation would silently revive it.
     update shifts set status = 'locked'
-      where id = new.shift_id and status <> 'locked';
+      where id = new.shift_id and status = 'open';
   end if;
 
   return new;
@@ -50,7 +53,7 @@ from shift_applications a
 where a.shift_id = s.id
   and a.pharmacy_confirmed
   and a.pharmacist_confirmed
-  and s.status <> 'locked';
+  and s.status = 'open';
 
 -- Verify
 select
