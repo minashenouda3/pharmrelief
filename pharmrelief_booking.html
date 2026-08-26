@@ -1133,7 +1133,8 @@ async function loadProfile() {
       <h3 style="margin:0 0 8px;font-size:16px">Professional verification ${verifBadge(p.verification_status)}</h3>
       <p style="font-size:13px;color:#64748b;line-height:1.6;margin:0 0 14px">
         PharmRelief verifies pharmacists against the Ontario College of Pharmacists public register.
-        Enter your legal name exactly as it appears on your OCP registration, then submit for review.
+        Enter your legal name exactly as it appears on your OCP registration.
+        We check it against the College's public register instantly.
         We never ask for government ID or photographs of identity documents.
       </p>
       ${p.verification_status === 'verified'
@@ -1198,12 +1199,57 @@ async function submitVerification() {
   const legal = document.getElementById('pfLegalName')?.value.trim();
   const ocp = document.getElementById('pfOcp')?.value.trim();
   if (!legal || !ocp) { showToast('Enter your legal name and OCP number first, then save.'); return; }
-  await withBusy('verifyBtn', 'Submitting...', async () => {
-    const { error } = await sb.from('pharmacist_profiles').update({
-      legal_name: legal, ocp_number: ocp, verification_status: 'pending', verification_note: null
+
+  // Surname as registered with the OCP. Take the last word of the legal
+  // name, which handles "Mina Shenouda" and "Anne Marie Tremblay" alike.
+  const surname = legal.split(/\s+/).filter(Boolean).pop();
+
+  await withBusy('verifyBtn', 'Checking the OCP register...', async () => {
+    const { data, error } = await sb.rpc('verify_ocp_member', {
+      p_member_number: ocp.replace(/\D/g, ''),
+      p_last_name: surname
+    });
+
+    // If the register is not loaded yet, fall back to manual review rather
+    // than blocking the pharmacist.
+    const result = Array.isArray(data) ? data[0] : data;
+    if (error || !result) {
+      const { error: e2 } = await sb.from('pharmacist_profiles').update({
+        legal_name: legal, ocp_number: ocp,
+        verification_status: 'pending', verification_note: null
+      }).eq('id', currentUser.id);
+      if (e2) { showToast('Could not submit: ' + e2.message); return; }
+      showToast('Submitted for review.');
+      loadProfile();
+      return;
+    }
+
+    if (!result.matched) {
+      await sb.from('pharmacist_profiles').update({
+        legal_name: legal, ocp_number: ocp, verification_status: 'unverified',
+        verification_note: 'That registration number and surname did not match the OCP register. Check both match your registration exactly, then try again.'
+      }).eq('id', currentUser.id);
+      loadProfile();
+      return;
+    }
+
+    if (!result.is_active) {
+      await sb.from('pharmacist_profiles').update({
+        legal_name: legal, ocp_number: ocp, verification_status: 'unverified',
+        verification_note: 'Your OCP registration is not currently listed as active. Pharmacies can only book pharmacists in good standing.'
+      }).eq('id', currentUser.id);
+      loadProfile();
+      return;
+    }
+
+    const { error: e3 } = await sb.from('pharmacist_profiles').update({
+      legal_name: legal, ocp_number: ocp,
+      verification_status: 'verified',
+      verified_at: new Date().toISOString(),
+      verification_note: null
     }).eq('id', currentUser.id);
-    if (error) { showToast('Could not submit: ' + error.message); return; }
-    showToast('Submitted for verification.');
+    if (e3) { showToast('Could not save: ' + e3.message); return; }
+    showToast('Verified against the OCP register.');
     loadProfile();
   });
 }
