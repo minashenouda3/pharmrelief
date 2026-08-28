@@ -16,18 +16,37 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+
+      # Without account credentials the suite cannot sign in. Reporting a
+      # failure for a configuration gap trains people to ignore the alerts,
+      # so skip cleanly and say why instead.
+      - name: Check credentials are configured
+        id: creds
+        env:
+          PHARMACY_EMAIL: ${{ secrets.PHARMACY_EMAIL }}
+          PHARMACIST_EMAIL: ${{ secrets.PHARMACIST_EMAIL }}
+        run: |
+          if [ -z "$PHARMACY_EMAIL" ] || [ -z "$PHARMACIST_EMAIL" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipped - PHARMACY_EMAIL and PHARMACIST_EMAIL secrets are not set. See STATUS.md."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install Playwright
+        if: steps.creds.outputs.ready == 'true'
         run: |
           npm init -y
           npm i -D @playwright/test
           npx playwright install --with-deps chromium
 
       - name: Wait for Netlify deploy to settle
+        if: steps.creds.outputs.ready == 'true'
         run: sleep 45
 
       - name: Run suite
+        if: steps.creds.outputs.ready == 'true'
         env:
           BASE_URL: https://pharmrelief.ca
           BASIC_AUTH_USER: ${{ secrets.BASIC_AUTH_USER }}
@@ -39,7 +58,7 @@ jobs:
         run: npx playwright test
 
       - name: Upload report
-        if: always()
+        if: always() && steps.creds.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
